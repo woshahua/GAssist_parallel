@@ -6,10 +6,10 @@
 	Copyright (C) 2004-2010
 	
 	F. Herrera (herrera@decsai.ugr.es)
-    L. Sánchez (luciano@uniovi.es)
-    J. Alcalá-Fdez (jalcala@decsai.ugr.es)
-    S. García (sglopez@ujaen.es)
-    A. Fernández (alberto.fernandez@ujaen.es)
+    L. Sç–£chez (luciano@uniovi.es)
+    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ˜ (sglopez@ujaen.es)
+    A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
 	This program is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 package keel.Algorithms.Discretizers.UniformFrequency_Discretizer;
 
 import keel.Dataset.*;
+import GAssist_Parallel.Parameters;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 import keel.Algorithms.Discretizers.Basic.*;
 
@@ -38,8 +39,8 @@ import keel.Algorithms.Discretizers.Basic.*;
  * Main class Uniform Frequency discretizer.
  * </p>
  * 
- * @author Written by Jaume Bacardit (La Salle, Ramón Llull University - Barcelona) 28/03/2004 </p>
- * Modified by Xavi Solé (La Salle, Ramón Llull University - Barcelona) 03/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004 </p>
+ * Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 03/12/2008
  * @version 1.1
  * @since JDK1.5
  */

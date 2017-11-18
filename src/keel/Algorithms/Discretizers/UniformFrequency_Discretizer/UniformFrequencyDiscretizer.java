@@ -30,6 +30,7 @@
 package keel.Algorithms.Discretizers.UniformFrequency_Discretizer;
 
 import java.util.*;
+import GAssist_Parallel.Parameters;
 import keel.Algorithms.Discretizers.Basic.*;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 

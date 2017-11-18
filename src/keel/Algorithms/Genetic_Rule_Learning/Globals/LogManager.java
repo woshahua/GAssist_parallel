@@ -6,10 +6,10 @@
 	Copyright (C) 2004-2010
 	
 	F. Herrera (herrera@decsai.ugr.es)
-    L. Sánchez (luciano@uniovi.es)
-    J. Alcalá-Fdez (jalcala@decsai.ugr.es)
-    S. García (sglopez@ujaen.es)
-    A. Fernández (alberto.fernandez@ujaen.es)
+    L. Sç–£chez (luciano@uniovi.es)
+    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ˜ (sglopez@ujaen.es)
+    A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
 	This program is free software: you can redistribute it and/or modify
@@ -36,6 +36,7 @@
 package keel.Algorithms.Genetic_Rule_Learning.Globals;
 
 import java.util.*;
+import GAssist_Parallel.Parameters;
 
 public class LogManager {
    	static FileManagement logFile;
