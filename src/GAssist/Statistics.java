@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,8 +29,8 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
@@ -38,8 +38,9 @@
 
 
 
-package GAssist;
-import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
+package GAssist_Parallel;
+import keel.Algorithms.Genetic_Rule_Learning.Globals.FileManagement;
+import keel.Algorithms.Genetic_Rule_Learning.Globals.LogManager;
 
 public class Statistics {
 /**
@@ -48,30 +49,33 @@ public class Statistics {
  * </p>
  */
 	
-	
-  public static double[] averageFitness;
-  public static double[] averageAccuracy;
-  public static double[] bestAccuracy;
-  public static double[] bestRules;
-  public static double[] bestAliveRules;
-  public static double[] averageNumRules;
-  public static double[] averageNumRulesUtils;
+  public double[] bestAccuracy;
+  public double[] bestFit;
+  public double[] bestRules;
+  public double[] bestAliveRules;
 
-  public static int iterationsSinceBest = 0;
-  public static double bestFitness;
-  public static double last10IterationsAccuracyAverage;
+  public double[] bestGlobalAccuracy;
+  public double[] bestGlobalFit;
+  public double[] bestGlobalRules;
+  public double[] bestGlobalAliveRules;
 
-  public static int countStatistics = 0;
 
-  public static void resetBestStats() {
+  public int iterationsSinceBest = 0;
+  public double bestFitness;
+  public double last10IterationsAccuracyAverage;
+
+  public int countStatistics = 0;
+  public int countGlobalStatistics = 0;
+
+  public void resetBestStats() {
     iterationsSinceBest = 0;
   }
 
-  public static int getIterationsSinceBest() {
+  public int getIterationsSinceBest() {
     return iterationsSinceBest;
   }
 
-  public static void bestOfIteration(double itBestFit) {
+  public void bestOfIteration(double itBestFit) {
     if (iterationsSinceBest == 0) {
       bestFitness = itBestFit;
       iterationsSinceBest++;
@@ -111,77 +115,48 @@ public class Statistics {
     last10IterationsAccuracyAverage /= (double) num;
   }
 
-  public static void initStatistics() {
-    Chronometer.startChronStatistics();
-
+  public void initStatistics() {
     int numStatistics = Parameters.numIterations;
 
-    averageFitness = new double[numStatistics];
-    averageAccuracy = new double[numStatistics];
     bestAccuracy = new double[numStatistics];
     bestRules = new double[numStatistics];
+    bestFit = new double[numStatistics];
     bestAliveRules = new double[numStatistics];
-    averageNumRules = new double[numStatistics];
-    averageNumRulesUtils = new double[numStatistics];
-
-    Chronometer.stopChronStatistics();
+    
+    bestGlobalAccuracy = new double[Parameters.numberOfStatistics];
+    bestGlobalRules = new double[Parameters.numberOfStatistics];
+    bestGlobalFit = new double[Parameters.numberOfStatistics];
+    bestGlobalAliveRules = new double[Parameters.numberOfStatistics];
   }
 
-  public static void statisticsToFile() {
-    FileManagement file = new FileManagement();
-    int length = countStatistics;
-    String line;
-    String lineToWrite = "";
-    try {
-      //file.initWrite("NumRules.txt");
-
-      //TODO
-
-      //file.closeWrite();
-    }
-    catch (Exception e) {
-      LogManager.println("Error in statistics file");
-    }
-  }
-
-  public static void computeStatistics(Classifier[] _population) {
-    Chronometer.startChronStatistics();
-    int populationLength = Parameters.popSize;
-    Classifier classAct;
-    double sumFitness = 0;
-    double sumAccuracy = 0;
-    double sumNumRules = 0;
-    double sumNumRulesUtils = 0;
-
-    for (int i = 0; i < populationLength; i++) {
-      classAct = _population[i];
-      sumFitness += classAct.getFitness();
-      sumAccuracy += classAct.getAccuracy();
-      sumNumRules += classAct.getNumRules();
-      sumNumRulesUtils += classAct.getNumAliveRules();
-    }
-    sumFitness = sumFitness / populationLength;
-    sumAccuracy = sumAccuracy / populationLength;
-    sumNumRules = sumNumRules / populationLength;
-    sumNumRulesUtils = sumNumRulesUtils / populationLength;
-
-    Statistics.averageFitness[countStatistics] = sumFitness;
-    Statistics.averageAccuracy[countStatistics] = sumAccuracy;
-    Statistics.averageNumRules[countStatistics] = sumNumRules;
-    Statistics.averageNumRulesUtils[countStatistics] = sumNumRulesUtils;
-
+  public void computeStatistics(Classifier[] _population) {
     Classifier best = PopulationWrapper.getBest(_population);
-    LogManager.println("Best of iteration " + countStatistics + " : " +
-                       best.getAccuracy() + " " + best.getFitness() + " " +
-                       best.getNumRules() + "(" + best.getNumAliveRules() + ")");
-    Statistics.bestAccuracy[countStatistics] = best.getAccuracy();
-    Statistics.bestRules[countStatistics] = best.getNumRules();
-    Statistics.bestAliveRules[countStatistics] = best.getNumAliveRules();
+        
+    bestAccuracy[countStatistics] = best.getAccuracy();
+    bestRules[countStatistics] = best.getNumRules();
+    bestAliveRules[countStatistics] = best.getNumAliveRules();
     bestOfIteration(best.getFitness());
 
     countStatistics++;
-    Chronometer.stopChronStatistics();
   }
 
+  public void computeGlobalStatistics(Classifier[] _population, Classifier[] _best) {
+	    Classifier best = PopulationWrapper.getGlobalBest(_population);
+	    Classifier best2 = PopulationWrapper.getGlobalBest(_best);
+	    
+	    if (best2 != null) {
+  	    if (best2.globalCompareToIndividual(best)) {
+  	      best = best2;
+  	    }
+	    }
+	    
+	    bestGlobalAccuracy[countGlobalStatistics] = best.getGlobalAccuracy();
+	    bestGlobalRules[countGlobalStatistics] = best.getGlobalNumRules();
+	    bestGlobalAliveRules[countGlobalStatistics] = best.getGlobalNumAliveRules();
+	    bestGlobalFit[countGlobalStatistics] = best.getGlobalFitness();
+	    
+	    countGlobalStatistics++;
+	  }
+  
 }
 

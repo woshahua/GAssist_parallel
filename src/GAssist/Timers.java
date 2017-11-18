@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,16 +29,14 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
-package GAssist;
-import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
-
+package GAssist_Parallel;
 
 public class Timers {
 /**
@@ -47,11 +45,17 @@ public class Timers {
  * certain iterations
  * </p>
  */
-	
 
-  public static boolean runTimers(int iteration, Classifier[] population) {
-    Globals_ADI.nextIteration();
-    boolean res1 = Globals_MDL.newIteration(iteration, population);
+  Globals_DefaultC gdc;
+  
+  public Timers() {
+    gdc = new Globals_DefaultC();
+  }
+
+  public boolean runTimers(Rand rn, int iteration, Classifier[] population, Statistics st) {
+    ParallelGlobals.getGlobals_ADI().nextIteration();
+    
+    boolean res1 = ParallelGlobals.getGlobals_MDL().newIteration(rn, iteration, population, st);
     boolean res2 = timerBloat(iteration);
 
     if (res1 || res2) {
@@ -60,18 +64,20 @@ public class Timers {
     return false;
   }
 
-  public static void runOutputTimers(int iteration
+  public void runOutputTimers(int iteration
                                      , Classifier[] population) {
-    Globals_DefaultC.checkNichingStatus(iteration, population);
+    gdc.checkNichingStatus(iteration, population);
   }
 
-  static boolean timerBloat(int _iteration) {
-    Parameters.doRuleDeletion = (_iteration >= Parameters.iterationRuleDeletion);
-    Parameters.doHierarchicalSelection = (_iteration >=
+  boolean timerBloat(int _iteration) {
+    int threadNo = ParallelGlobals.getThreadNo();
+    
+    Parameters.doRuleDeletionPerThread[threadNo] = (_iteration >= Parameters.iterationRuleDeletion);
+    Parameters.doHierarchicalSelectionPerThread[threadNo] = (_iteration >=
                                           Parameters.iterationHierarchicalSelection);
 
     if (_iteration == Parameters.numIterations - 1) {
-      Parameters.ruleDeletionMinRules = 1;
+      Parameters.ruleDeletionMinRulesPerThread[threadNo] = 1;
       return true;
     }
 

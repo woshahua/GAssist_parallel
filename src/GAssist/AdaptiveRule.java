@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,38 +29,37 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Dataset.*;
-import keel.Algorithms.Genetic_Rule_Learning.GAssist.AdaptiveAttribute;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 
 public class AdaptiveRule {
-  public static void constructor(int[] crm, int base, int defaultClass) {
+  public static void constructor(Rand rn, int[] crm, int base, int defaultClass, int strata) {
     InstanceWrapper ins = null;
     if (PopulationWrapper.smartInit) {
-      if (Globals_DefaultC.defaultClassPolicy != Globals_DefaultC.DISABLED) {
-        ins = PopulationWrapper.getInstanceInit(defaultClass);
+      if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy != ParallelGlobals.getGlobals_DefaultC().DISABLED) {
+        ins = PopulationWrapper.getInstanceInit(defaultClass, strata);
       }
       else {
-        ins = PopulationWrapper.getInstanceInit(Parameters.numClasses);
+        ins = PopulationWrapper.getInstanceInit(Parameters.numClasses, strata);
       }
     }
 
     int base2 = base + 2;
     crm[base] = 1;
     for (int i = 0; i < Parameters.numAttributes; i++) {
-      AdaptiveAttribute.constructor(crm, base2, i, ins);
+      AdaptiveAttribute.constructor(rn, crm, base2, i, ins);
       crm[base] += crm[base2];
-      base2 += Globals_ADI.size[i];
+      base2 += ParallelGlobals.getGlobals_ADI().size[i];
     }
 
     if (ins != null) {
@@ -68,9 +67,9 @@ public class AdaptiveRule {
     }
     else {
       do {
-        crm[base + 1] = Rand.getInteger(0, Parameters.numClasses - 1);
+        crm[base + 1] = rn.getInteger(0, Parameters.numClasses - 1);
       }
-      while (Globals_DefaultC.enabled && crm[base + 1] == defaultClass);
+      while (ParallelGlobals.getGlobals_DefaultC().enabled && crm[base + 1] == defaultClass);
     }
   }
 
@@ -78,7 +77,7 @@ public class AdaptiveRule {
     int base2 = base + 2;
     double length = 0;
     for (int i = 0; i < Parameters.numAttributes; i++) {
-      if (Globals_ADI.types[i] == Attribute.REAL) {
+      if (ParallelGlobals.getGlobals_ADI().types[i] == Attribute.REAL) {
         double intervalCount = 0;
         int previousValue = crm[base2 + 3];
         int numInt = crm[base2];
@@ -98,7 +97,7 @@ public class AdaptiveRule {
       }
       else {
         double countFalses = 0;
-        int numValues = Globals_ADI.size[i];
+        int numValues = ParallelGlobals.getGlobals_ADI().size[i];
         for (int j = 2, pos = base2 + j; j < numValues; j++, pos++) {
           if (crm[pos] == 0) {
             countFalses++;
@@ -106,7 +105,7 @@ public class AdaptiveRule {
         }
         length += numValues - 2.0 + countFalses;
       }
-      base2 += Globals_ADI.size[i];
+      base2 += ParallelGlobals.getGlobals_ADI().size[i];
     }
     return length;
   }
@@ -116,7 +115,7 @@ public class AdaptiveRule {
     int[][] discValues = ins.getDiscretizedValues();
     int[] nominalValues = ins.getNominalValues();
     for (int i = 0; i < Parameters.numAttributes; i++) {
-      if (Globals_ADI.types[i] == Attribute.REAL) {
+      if (ParallelGlobals.getGlobals_ADI().types[i] == Attribute.REAL) {
         int value = discValues[i][crm[base2 + 1]];
         if (!AdaptiveAttribute.doMatchReal(crm, base2, value)) {
           return false;
@@ -128,7 +127,7 @@ public class AdaptiveRule {
           return false;
         }
       }
-      base2 += Globals_ADI.size[i];
+      base2 += ParallelGlobals.getGlobals_ADI().size[i];
     }
     return true;
   }
@@ -142,7 +141,7 @@ public class AdaptiveRule {
       if (temp.length() > 0) {
         str += temp + "|";
       }
-      base2 += Globals_ADI.size[i];
+      base2 += ParallelGlobals.getGlobals_ADI().size[i];
     }
     int cl = crm[base + 1];
     String name = Attributes.getAttribute(Parameters.numAttributes).
@@ -160,7 +159,7 @@ public class AdaptiveRule {
     s2[base2] = 1;
 
     for (int i = 0; i < cutPoint && i < Parameters.numAttributes; i++) {
-      int inc = Globals_ADI.size[i];
+      int inc = ParallelGlobals.getGlobals_ADI().size[i];
       System.arraycopy(p1, baseP1, s1, baseP1, inc);
       System.arraycopy(p2, baseP2, s2, baseP2, inc);
       s1[base1] += p1[baseP1];
@@ -169,7 +168,7 @@ public class AdaptiveRule {
       baseP2 += inc;
     }
     for (int i = cutPoint; i < Parameters.numAttributes; i++) {
-      int inc = Globals_ADI.size[i];
+      int inc = ParallelGlobals.getGlobals_ADI().size[i];
       System.arraycopy(p1, baseP1, s2, baseP2, inc);
       System.arraycopy(p2, baseP2, s1, baseP1, inc);
       s1[base1] += p2[baseP2];
@@ -189,70 +188,72 @@ public class AdaptiveRule {
 
   }
 
-  public static void mutation(int[] crm, int base, int defaultClass) {
-    if (Globals_DefaultC.numClasses > 1 && Rand.getReal() < 0.10) {
+  public static void mutation(Rand rn, int[] crm, int base, int defaultClass) {
+    if (ParallelGlobals.getGlobals_DefaultC().numClasses > 1 && rn.getReal() < 0.10) {
       int newClass;
       int oldClass = crm[base + 1];
       do {
-        newClass = Rand.getInteger(0, Parameters.numClasses - 1);
+        newClass = rn.getInteger(0, Parameters.numClasses - 1);
       }
-      while (newClass == oldClass || (Globals_DefaultC.enabled
+      while (newClass == oldClass || (ParallelGlobals.getGlobals_DefaultC().enabled
                                       && newClass == defaultClass));
       crm[base + 1] = newClass;
     }
     else {
-      int attribute = Rand.getInteger(0, Parameters.numAttributes - 1);
-      int base2 = base + 2 + Globals_ADI.offset[attribute];
-      AdaptiveAttribute.mutation(crm, base2, attribute);
+      int attribute = rn.getInteger(0, Parameters.numAttributes - 1);
+      int base2 = base + 2 + ParallelGlobals.getGlobals_ADI().offset[attribute];
+      AdaptiveAttribute.mutation(rn, crm, base2, attribute);
     }
   }
 
-  public static boolean doSplit(int[] crm, int base) {
+  public static boolean doSplit(Rand rn, int[] crm, int base) {
     int base2 = base + 2;
     boolean modif = false;
 
     for (int i = 0; i < Parameters.numAttributes; i++) {
-      if (Rand.getReal() < Parameters.probSplit) {
+      if (rn.getReal() < Parameters.probSplit) {
         modif = true;
-        int pos = Rand.getInteger(0, crm[base2] - 1);
-        crm[base] += AdaptiveAttribute.doSplit(crm, base2, i, pos);
+        int pos = rn.getInteger(0, crm[base2] - 1);
+        crm[base] += AdaptiveAttribute.doSplit(rn, crm, base2, i, pos);
       }
-      base2 += Globals_ADI.size[i];
+      base2 += ParallelGlobals.getGlobals_ADI().size[i];
     }
     return modif;
   }
 
-  public static boolean doMerge(int[] crm, int base) {
+  public static boolean doMerge(Rand rn, int[] crm, int base) {
     int base2 = base + 2;
     boolean modif = false;
 
     for (int i = 0; i < Parameters.numAttributes; i++) {
-      if (Rand.getReal() < Parameters.probMerge) {
+      if (rn.getReal() < Parameters.probMerge) {
         modif = true;
-        int pos = Rand.getInteger(0, crm[base2] - 1);
-        crm[base] += AdaptiveAttribute.doMerge(crm, base2, i, pos);
+        int pos = rn.getInteger(0, crm[base2] - 1);
+        crm[base] += AdaptiveAttribute.doMerge(rn, crm, base2, i, pos);
       }
-      base2 += Globals_ADI.size[i];
+      base2 += ParallelGlobals.getGlobals_ADI().size[i];
     }
     return modif;
   }
 
-  public static boolean doReinitialize(int[] crm, int base) {
+  public static boolean doReinitialize(Rand rn, int[] crm, int base) {
     int base2 = base + 2;
     boolean modif = false;
+    
+    int threadNo = ParallelGlobals.getThreadNo();
 
-    if (Parameters.probReinitialize == 0) {
+    if (Parameters.probReinitializePerThread[threadNo] == 0) {
       return modif;
     }
 
     for (int i = 0; i < Parameters.numAttributes; i++) {
-      if (Rand.getReal() < Parameters.probReinitialize) {
+      if (rn.getReal() < Parameters.probReinitializePerThread[threadNo]) {
         modif = true;
         crm[base] -= crm[base2];
-        AdaptiveAttribute.doReinitialize(crm, base2, i);
+        AdaptiveAttribute.doReinitialize(rn, crm, base2, i);
         crm[base] += crm[base2];
       }
-      base2 += Globals_ADI.size[i];
+      base2 += ParallelGlobals.getGlobals_ADI().size[i];
     }
     return modif;
   }

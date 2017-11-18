@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,16 +29,15 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
-
+package GAssist_Parallel;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 
 abstract public class Classifier {
@@ -65,12 +64,22 @@ abstract public class Classifier {
   protected int positionRuleMatch;
 
   protected int numRules;
+  
+  protected int globalNumAliveRules;
+  protected int globalNumRules;
+  protected double globalLength;
+  protected double globalFitness;
+  protected double globalAccuracy;
 
-  public abstract void initRandomClassifier();
+  public abstract void initRandomClassifier(int strata);
 
   public abstract int doMatch(InstanceWrapper ins);
 
   public abstract int getNumRules();
+  
+  public int getGlobalNumRules() { 
+    return globalNumRules;
+  }
 
   public abstract void deleteRules(int[] whichRules);
 
@@ -101,6 +110,14 @@ abstract public class Classifier {
   public double getFitness() {
     return fitness;
   }
+  
+  public double getGlobalFitness() {
+    return globalFitness;
+  }
+  
+  public double getGlobalAccuracy() {
+    return globalAccuracy;
+  }
 
   public void setFitness(double _fitness) {
     fitness = _fitness;
@@ -117,11 +134,15 @@ abstract public class Classifier {
   public int getNumAliveRules() {
     return numAliveRules;
   }
+  
+  public int getGlobalNumAliveRules() {
+    return globalNumAliveRules;
+  }
 
   public void setNumAliveRules(int _numAliveRules) {
     numAliveRules = _numAliveRules;
   }
-
+  
   public void resetPerformance() {
     accuracy = 0;
     fitness = 0;
@@ -129,11 +150,23 @@ abstract public class Classifier {
     isEvaluated = false;
   }
 
-  public void computePerformance() {
-    accuracy = PerformanceAgent.getAccuracy();
-    fitness = PerformanceAgent.getFitness(this);
-    numAliveRules = PerformanceAgent.getNumAliveRules();
+  public void computePerformance(PerformanceAgent pa) {
+    accuracy = pa.getAccuracy();
+    fitness = pa.getFitness(this, pa);
+    numAliveRules = pa.getNumAliveRules();
     isEvaluated = true;
+  }
+  
+  public void computeGlobalPerformance(PerformanceAgent pa) {
+    globalAccuracy = pa.getAccuracy();
+    globalFitness = pa.getFitness(this, pa);
+    globalNumAliveRules = pa.getNumAliveRules();
+    globalNumRules = getNumRules();
+    globalLength = getLength();
+  }
+  
+  public double getGlobalLength() {
+    return globalLength;
   }
 
   /**
@@ -155,7 +188,7 @@ abstract public class Classifier {
     return theoryLength;
   }
 
-  public abstract double computeTheoryLength();
+  public abstract double computeTheoryLength(PerformanceAgent pa);
 
   /**
    * This function returns true if this individual is better than
@@ -167,8 +200,11 @@ abstract public class Classifier {
     double l2 = ind.getLength();
     double f1 = getFitness();
     double f2 = ind.getFitness();
+    
+    Rand rn = ParallelGlobals.getRand();
+    int threadNo = ParallelGlobals.getThreadNo();
 
-    if (Parameters.doHierarchicalSelection) {
+    if (Parameters.doHierarchicalSelectionPerThread[threadNo]) {
       if (Math.abs(f1 - f2) <= Parameters.hierarchicalSelectionThreshold) {
         if (l1 < l2) {
           return true;
@@ -186,7 +222,7 @@ abstract public class Classifier {
       if (f1 < f2) {
         return false;
       }
-      if (Rand.getReal() < 0.5) {
+      if (rn.getReal() < 0.5) {
         return true;
       }
       return false;
@@ -198,10 +234,72 @@ abstract public class Classifier {
     if (f1 > f2) {
       return false;
     }
-    if (Rand.getReal() < 0.5) {
+    if (rn.getReal() < 0.5) {
       return true;
     }
     return false;
+  }
+  
+  public boolean globalCompareToIndividual(Classifier ind) {
+    
+    if (ind == null) {
+      return true;
+    }
+    
+    Rand rn = ParallelGlobals.getRand();
+    
+    double l1 = getGlobalLength();
+    double l2 = ind.getGlobalLength();
+    double f1 = getGlobalFitness();
+    double f2 = ind.getGlobalFitness();
+    
+    double e1 = getGlobalAccuracy();
+    double e2 = ind.getGlobalAccuracy();
+
+    /*
+    if (Parameters.useMDL == false) {
+      if (f1 > f2) {
+        return true;
+      }
+      if (f1 < f2) {
+        return false;
+      }
+      if (rn.getReal() < 0.5) {
+        return true;
+      }
+      return false;
+    }
+
+    if (f1 < f2) {
+      return true;
+    }
+    if (f1 > f2) {
+      return false;
+    }
+    if (rn.getReal() < 0.5) {
+      return true;
+    }
+    */
+    
+    if (e1 > e2) {
+      return true;
+    }
+    else if (e1 < e2) {
+      return false;
+    }
+    
+    if (l1 < l2) {
+      return true;
+    }
+    else if (l1 > l2) {
+      return false;
+    }
+    if (rn.getReal() < 0.5) {
+      return true;
+    }
+    
+    return false;
+    
   }
 
   public abstract int getNiche();
@@ -211,5 +309,6 @@ abstract public class Classifier {
   public abstract int numSpecialStages();
 
   public abstract void doSpecialStage(int stage);
+
 }
 

@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,32 +29,33 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 
 public class Globals_MDL {
-	static double theoryWeight;
-	static boolean activated = false;
-	static boolean fixedWeight = false;
+	double theoryWeight;
+	boolean activated = false;
+	boolean fixedWeight = false;
 
-	public static boolean newIteration(int iteration, Classifier[]pop) {
-		if (!Parameters.useMDL)
+	public boolean newIteration(Rand rn, int iteration, Classifier[]pop, Statistics st) {
+		if (!Parameters.useMDL) {
 			return false;
+		}
 
 		Classifier ind = PopulationWrapper.getBest(pop);
 
 		boolean updateWeight = false;
 		if (iteration == Parameters.iterationMDL) {
-			LogManager.println("Iteration " + iteration +
-					   " :MDL fitness activated");
+//			LogManager.println("Iteration " + iteration +
+//					   " :MDL fitness activated");
 			activated = true;
 			double error = ind.getExceptionsLength();
 			double theoryLength = ind.getTheoryLength();
@@ -69,13 +70,13 @@ public class Globals_MDL {
 		}
 
 		if (activated && !fixedWeight &&
-		    Statistics.last10IterationsAccuracyAverage == 1.0) {
+		    (st.last10IterationsAccuracyAverage == 1.0 || Parameters.weightRelaxFactor == 1.0) ) {
 			fixedWeight = true;
 		}
 
 		if (activated && !fixedWeight) {
 			if (ind.getAccuracy() != 1.0) {
-				if (Statistics.getIterationsSinceBest() ==
+				if (st.getIterationsSinceBest() ==
 				    10) {
 					theoryWeight *=
 					    Parameters.weightRelaxFactor;
@@ -85,21 +86,21 @@ public class Globals_MDL {
 		}
 
 		if (updateWeight) {
-			Statistics.resetBestStats();
+			st.resetBestStats();
 			return true;
 		}
 
 		return false;
 	}
 
-	public static double mdlFitness(Classifier ind) {
+	public double mdlFitness(Classifier ind, PerformanceAgent pa) {
 		double fit = 0;
-		ind.computeTheoryLength();
+		ind.computeTheoryLength(pa);
 		if (activated) {
 			fit = ind.getTheoryLength() * theoryWeight;
 		}
 		double exceptionsLength =
-		    105.00 - PerformanceAgent.getAccuracy() * 100.0;
+		    105.00 - pa.getAccuracy() * 100.0;
 		ind.setExceptionsLength(exceptionsLength);
 		fit += exceptionsLength;
 		return fit;

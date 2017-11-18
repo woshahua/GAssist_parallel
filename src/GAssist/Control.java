@@ -6,10 +6,10 @@
 	Copyright (C) 2004-2010
 	
 	F. Herrera (herrera@decsai.ugr.es)
-    L. SÈÄçÔΩ£chez (luciano@uniovi.es)
-    J. AlcalÔøΩÔΩΩFdez (jalcala@decsai.ugr.es)
-    S. GarcËúíÔøΩ(sglopez@ujaen.es)
-    A. FernÈÄçÔΩ£dez (alberto.fernandez@ujaen.es)
+    L. SÁñ£chez (luciano@uniovi.es)
+    J. Alcal?ΩFdez (jalcala@decsai.ugr.es)
+    S. GarcÂÉ?(sglopez@ujaen.es)
+    A. FernÁñ£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
 	This program is free software: you can redistribute it and/or modify
@@ -29,14 +29,19 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, RamË©πÔΩ¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi SolÔøΩÔΩΩ(La Salle, RamË©πÔΩ¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ram˚•¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?Ω(La Salle, Ram˚•¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
-package GAssist;
+package GAssist_Parallel;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 
@@ -53,21 +58,44 @@ public class Control {
     long t1 = System.currentTimeMillis();
 
     ParserParameters.doParse(args[0]);
-    //Parameters.trainFile = args[1];
-    //Parameters.testFile = args[2];
+    Parameters.setVars();
+    
+    keel.Algorithms.Genetic_Rule_Learning.Globals.Rand.initRand();
+
     LogManager.initLogManager();
-    System.out.println("Test1");
-    Rand.initRand();
 
-    GA ga = new GA();
-    ga.initGA();
-    ga.run();
+    try {
+      outputParameters(args[0]);
+    }
+    catch (Exception e) { }
+    
+    System.out.println();
+    
+    // Run GAssist-Parallel
+    Parallel pa = new Parallel();    
+    pa.run();
 
-    LogManager.println(Chronometer.getChrons());
     long t2 = System.currentTimeMillis();
     LogManager.println("Total time: " + ( (t2 - t1) / 1000.0));
 
     LogManager.closeLog();
+  }
+  
+  public static void outputParameters(String file) throws IOException {
+
+    BufferedReader reader = new BufferedReader( new FileReader (file));
+    
+    LogManager.println("Parameter Settings: \n");
+    
+    String line = null;
+
+    while( ( line = reader.readLine() ) != null ) {
+      LogManager.println( line );
+    }
+
+    LogManager.println("\n");
+    
+    reader.close();
   }
 
 }

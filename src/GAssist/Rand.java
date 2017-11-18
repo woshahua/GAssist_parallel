@@ -27,58 +27,44 @@
   
 **********************************************************************/
 
-/**
- * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
- * @version 1.1
- * @since JDK1.2
- * </p>
+/*
+ * Rand.java
+ *
+ * Created on 29 de marzo de 2004, 23:31
  */
 
+/**
+ *
+ */
 
 package GAssist_Parallel;
 
-public class Sampling {
-/**
- * <p>
- * Helps managing a sampling without replacement process
- * </p>
- */
-	
-	
-  int maxSize;
-  int num;
-  int[] sample;
+import java.util.*;
 
-  void initSampling() {
-    for (int i = 0; i < maxSize; i++) {
-      sample[i] = i;
+import keel.Algorithms.Genetic_Rule_Learning.Globals.MTwister;
+
+public class Rand {
+    
+    private MTwister random;
+    
+    /** Generates a new instance of Random */
+    public void initRand(int seed) {
+        random = new MTwister(seed);
     }
-    num = maxSize;
-  }
-
-  public Sampling(int _maxSize) {
-    maxSize = _maxSize;
-    sample = new int[maxSize];
-    initSampling();
-  }
-
-  public int numSamplesLeft() {
-    return num;
-  }
-
-  public int getSample(Rand rn) {
-    int pos = rn.getInteger(0, num - 1);
-    int value = sample[pos];
-    sample[pos] = sample[num - 1];
-    num--;
-
-    if (num == 0) {
-      initSampling();
+    
+    /**
+     *  Returns a random real between [0,1)
+     */
+    public double getReal() {
+        return random.genrand_real2();
     }
-
-    return value;
-  }
+    
+    /**
+     *  Returns a random long between [uLow,uHigh]
+     */
+    public int getInteger(int uLow, int uHigh) {
+    	return (uLow + (int)(random.genrand_real2()*(uHigh + 1 - uLow)));
+    }
+    
 }
 

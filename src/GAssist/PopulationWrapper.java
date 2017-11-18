@@ -6,10 +6,10 @@
 	Copyright (C) 2004-2010
 	
 	F. Herrera (herrera@decsai.ugr.es)
-    L. SÈÄçÔΩ£chez (luciano@uniovi.es)
-    J. AlcalÔøΩÔΩΩFdez (jalcala@decsai.ugr.es)
-    S. GarcËúíÔøΩ(sglopez@ujaen.es)
-    A. FernÈÄçÔΩ£dez (alberto.fernandez@ujaen.es)
+    L. SÁñ£chez (luciano@uniovi.es)
+    J. Alcal?ΩFdez (jalcala@decsai.ugr.es)
+    S. GarcÂÉ?(sglopez@ujaen.es)
+    A. FernÁñ£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
 	This program is free software: you can redistribute it and/or modify
@@ -29,15 +29,17 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, RamË©πÔΩ¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi SolÔøΩÔΩΩ(La Salle, RamË©πÔΩ¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ram˚•¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?Ω(La Salle, Ram˚•¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
+
+import java.util.ArrayList;
 
 import keel.Dataset.*;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
@@ -57,19 +59,16 @@ public class PopulationWrapper {
   static public InstanceWrapper[] allInstances;
 
   static public int[][] instancesByClass;
+  static public int[][][] instancesByWindowClass;
   static public Sampling[] samplesOfClasses;
+  static public Sampling[][] samplesOfWindowClasses;
   static public boolean smartInit;
   static public boolean cwInit;
 
-  public static int getCurrentVersion() {
-    return ilas.getCurrentVersion();
-  }
-
-  public static int numVersions() {
-    return ilas.numVersions();
-  }
-
   public static void initInstancesEvaluation() {
+    Rand rn = new Rand();
+    rn.initRand(0);
+    
     is = new InstanceSet();
     try {
       is.readSet(Parameters.trainInputFile, true);
@@ -78,13 +77,14 @@ public class PopulationWrapper {
       LogManager.printErr(e.toString());
       System.exit(1);
     }
+    
     checkDataset();
     replaceMissing(is);
     if (Parameters.adiKR) {
       DiscretizationManager.init();
     }
     allInstances = createWrapperInstances(is);
-    ilas = new Windowing(allInstances);
+    ilas = new Windowing(rn, allInstances);
 
     if (Parameters.initMethod != null) {
       if (Parameters.initMethod.equalsIgnoreCase("smart")) {
@@ -104,8 +104,36 @@ public class PopulationWrapper {
       smartInit = false;
       cwInit = false;
     }
+    
+    // New Smart init
+    if (Parameters.initializeRulesLocally && smartInit) {
+      int nc = Parameters.numClasses;
+      int classCounts[] = new int[nc];
+      instancesByWindowClass = new int[Parameters.parallelParts][][];
+      samplesOfWindowClasses = new Sampling[Parameters.parallelParts][];
 
-    if (smartInit) {
+      for (int i = 0; i < Parameters.parallelParts; i ++) {
+        instancesByWindowClass[i] = new int[Parameters.numClasses][];
+        samplesOfWindowClasses[i] = new Sampling[nc];
+        
+        for (int j = 0; j < nc; j++) {
+          int num = numInstancesOfClass(j, i);
+          instancesByWindowClass[i][j] = new int[num];
+          samplesOfWindowClasses[i][j] = new Sampling( num );
+          classCounts[j] = 0;
+        }
+        
+        InstanceWrapper[] set = ilas.getInstances(i);
+        
+        for (int j = 0; j < set.length; j++) {
+          int cl = set[j].classOfInstance();
+          instancesByWindowClass[i][cl][classCounts[cl]++] = j;
+        }        
+        
+      }
+    }
+    // Old Smart init
+    else if (smartInit) {
       int nc = Parameters.numClasses;
       int classCounts[] = new int[nc];
       instancesByClass = new int[nc][];
@@ -125,15 +153,30 @@ public class PopulationWrapper {
     }
   }
 
-  public static InstanceWrapper getInstanceInit(int forbiddenCL) {
-    if (cwInit) {
+  public static InstanceWrapper getInstanceInit(int forbiddenCL, int strata) {
+    
+    Rand rn = ParallelGlobals.getRand();
+    
+    // Create from local patterns
+    if (Parameters.initializeRulesLocally && cwInit) {
       int cl;
       do {
-        cl = Rand.getInteger(0, Parameters.numClasses - 1);
+        cl = rn.getInteger(0, Parameters.numClasses - 1);
+      }
+      while (cl == forbiddenCL
+             || instancesByWindowClass[strata][cl].length == 0);
+      int pos = samplesOfWindowClasses[strata][cl].getSample(rn);
+      return ilas.getInstances(strata)[instancesByWindowClass[strata][cl][pos]];
+    }
+    // Create from global patterns
+    else if (cwInit) {
+      int cl;
+      do {
+        cl = rn.getInteger(0, Parameters.numClasses - 1);
       }
       while (cl == forbiddenCL
              || instancesByClass[cl].length == 0);
-      int pos = samplesOfClasses[cl].getSample();
+      int pos = samplesOfClasses[cl].getSample(rn);
       return allInstances[instancesByClass[cl][pos]];
     }
 
@@ -149,12 +192,12 @@ public class PopulationWrapper {
       }
     }
 
-    int pos = Rand.getInteger(0, total - 1);
+    int pos = rn.getInteger(0, total - 1);
     int acum = 0;
     for (int i = 0; i < count.length; i++) {
       acum += count[i];
       if (pos < acum) {
-        int inst = samplesOfClasses[i].getSample();
+        int inst = samplesOfClasses[i].getSample(rn);
         return allInstances[instancesByClass[i][inst]];
       }
     }
@@ -173,42 +216,72 @@ public class PopulationWrapper {
     return iw;
   }
 
-  public static boolean initIteration() {
-    return ilas.newIteration();
-  }
-
-  public static void evaluateClassifier(Classifier ind) {
+  public static void evaluateClassifier(Classifier ind, PerformanceAgent pa, int strataToUse, boolean deleteRules) {
     int predicted, real;
-    InstanceWrapper[] instances = ilas.getInstances();
+    InstanceWrapper[] instances;
+    		
+    instances = ilas.getInstances(strataToUse);
 
     ind.resetPerformance();
-    PerformanceAgent.resetPerformance(ind.getNumRules());
+    pa.resetPerformance(ind.getNumRules());
     for (int i = 0; i < instances.length; i++) {
       real = instances[i].classOfInstance();
       predicted = ind.doMatch(instances[i]);
-      PerformanceAgent.addPrediction(predicted, real
+      pa.addPrediction(predicted, real
                                      , ind.getPositionRuleMatch());
     }
 
-    ind.computePerformance();
+    ind.computePerformance(pa);
 
-    if (Parameters.doRuleDeletion) {
-      ind.deleteRules(PerformanceAgent.controlBloatRuleDeletion());
+    int threadNo = ParallelGlobals.getThreadNo();
+    
+    if (Parameters.doRuleDeletionPerThread[threadNo] && deleteRules) {
+      ind.deleteRules(pa.controlBloatRuleDeletion());
     }
   }
 
-  public static void doEvaluation(Classifier[] _population) {
-    Chronometer.startChronEvaluation();
+  public static void doEvaluation(Classifier[] _population, PerformanceAgent pa, int strataToUse, boolean deleteRules) {
     int popSize = _population.length;
 
     for (int i = 0; i < popSize; i++) {
       if (!_population[i].getIsEvaluated()) {
-        evaluateClassifier(_population[i]);
+        evaluateClassifier(_population[i], pa, strataToUse, deleteRules);
       }
     }
-
-    Chronometer.stopChronEvaluation();
   }
+  
+  public static void doEvaluationOnAll(Classifier[] _population, PerformanceAgent pa, int strataToUse) {
+    int popSize = _population.length;
+    
+    for (int i = 0; i < popSize; i++) {
+      _population[i].setIsEvaluated(false);
+    }
+
+    doEvaluation(_population, pa, strataToUse, true);
+  }
+   
+  public static void doGlobalEvaluation(Classifier[] _population, PerformanceAgent pa) {
+    int predicted, real;
+    int popSize = _population.length;
+
+    for (int i = 0; i < popSize; i++) {
+      if (_population[i] != null) {
+        Classifier ind = _population[i];
+        
+        pa.resetPerformance(ind.getNumRules());
+        
+        for (int j = 0; j < allInstances.length; j++) {
+          real = allInstances[j].classOfInstance();
+          predicted = ind.doMatch(allInstances[j]);
+          pa.addPrediction(predicted, real
+                          , ind.getPositionRuleMatch());
+          }
+    
+        ind.computeGlobalPerformance(pa);
+      }
+    }
+  }
+
 
   /**
    *  Obtains the best classifier of population.
@@ -226,6 +299,48 @@ public class PopulationWrapper {
     }
     return _population[posWinner];
   }
+  
+  public static Classifier[] getBest(Classifier[] _population, int num) {
+    int sizePop = _population.length;
+    
+    Classifier result[] = new Classifier[num];
+    ArrayList<Integer> used = new ArrayList<Integer>();
+    
+    for (int n = 0; n < num; n++) {
+      int posWinner = 0;
+      for (int i = 1; i < sizePop; i++) {
+        if (!used.contains(i)) {
+          if (_population[i].compareToIndividual(_population[posWinner])) {
+            posWinner = i;
+          }
+        }
+      }
+      
+      used.add(posWinner);
+      result[n] = _population[posWinner];
+    }
+    
+    return result;
+  }
+  
+  /**
+   *  Obtains the globally best classifier of population.
+   *  @param _population The population
+   *  @return Best classifier of population.
+   */  
+  public static Classifier getGlobalBest(Classifier[] _population) {
+    int sizePop = _population.length;
+    int posWinner = 0;
+
+    for (int i = 1; i < sizePop; i++) {
+      if (_population[i] != null) {
+        if (_population[i].globalCompareToIndividual(_population[posWinner])) {
+          posWinner = i;
+        }
+      }
+    }
+    return _population[posWinner];
+  }
 
   /**
    *  Obtains the worst classifier of population.
@@ -235,13 +350,52 @@ public class PopulationWrapper {
   public static int getWorst(Classifier[] _population) {
     int sizePop = _population.length;
     int posWorst = 0;
-
+    
     for (int i = 1; i < sizePop; i++) {
       if (!_population[i].compareToIndividual(_population[posWorst])) {
         posWorst = i;
       }
     }
     return posWorst;
+  }
+  
+  /**
+   *  Obtains the worst classifier of population.
+   *  @param _population The population
+   *  @return Worst classifier of population.
+   */
+  public static int[] getWorst(Classifier[] _population, int num) {
+    int sizePop = _population.length;
+    int posWorst = 0;
+    
+    int[] result = new int[num];
+    ArrayList<Integer> used = new ArrayList<Integer>();
+    
+    for (int n = 0; n < num; n++) {
+      for (int i = 1; i < sizePop; i++) {
+        if (!used.contains(i)) {
+          if (!_population[i].compareToIndividual(_population[posWorst])) {
+            posWorst = i;
+          }
+        }
+      }
+      
+      used.add(posWorst);
+      result[n] = posWorst;
+    }
+    return result;
+  }
+  
+  public static void replaceWorstWithNewClassifiers(Classifier[] newClassifiers, Classifier[] _population,
+      PerformanceAgent pa, int strataToUse) {
+    int num = newClassifiers.length;
+    
+    int[] worst = getWorst(_population, num);
+    
+    for (int i=0; i < num; i++) {
+      _population[worst[i]] = newClassifiers[i].copy();
+      evaluateClassifier(_population[worst[i]], pa, strataToUse, true);
+    }
   }
 
   public static void setModified(Classifier[] _population) {
@@ -252,7 +406,7 @@ public class PopulationWrapper {
     }
   }
 
-  public static void testClassifier(Classifier ind, String typeOfTest,
+  public static void testClassifier(Classifier ind, PerformanceAgent pa, String typeOfTest,
                                     String testInputFile, String testOutputFile) {
     InstanceSet testSet = new InstanceSet();
     try {
@@ -266,7 +420,7 @@ public class PopulationWrapper {
     InstanceWrapper []instances=createWrapperInstances(testSet);
     double numInstances=instances.length;
     int real, predicted;
-    PerformanceAgent.resetPerformanceTest(ind.getNumRules());
+    pa.resetPerformanceTest(ind.getNumRules());
     ind.resetPerformance();
     //Attribute att = Attributes.getAttribute(Parameters.numAttributes);
     Attribute att = Attributes.getOutputAttribute(0);
@@ -285,7 +439,7 @@ public class PopulationWrapper {
                             pred=att.getNominalValue(predicted);
                     }
                     fm.writeLine(att.getNominalValue(real)+" "+pred+"\n");
-                    PerformanceAgent.addPredictionTest(predicted,real
+                    pa.addPredictionTest(predicted,real
                             ,ind.getPositionRuleMatch());
             }
             fm.closeWrite();
@@ -295,7 +449,7 @@ public class PopulationWrapper {
     }
 
     LogManager.println("\nStatistics on "+typeOfTest+" file");
-    PerformanceAgent.dumpStats(typeOfTest);
+    pa.dumpStats(typeOfTest);
     LogManager.println("");
   }
 
@@ -359,6 +513,17 @@ public class PopulationWrapper {
     Instance [] inst = is.getInstances();
     for (int i = 0; i < inst.length; i++){
       if (inst[i].getOutputNominalValuesInt(0) == clas){
+        count++;
+      }
+    }
+    return count;
+  }
+  
+  static int numInstancesOfClass(int clas, int strata){
+    int count = 0;
+    InstanceWrapper[] inst = ilas.getInstances(strata);
+    for (int i = 0; i < inst.length; i++){
+      if (inst[i].classOfInstance() == clas){
         count++;
       }
     }

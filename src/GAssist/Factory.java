@@ -6,10 +6,10 @@
 	Copyright (C) 2004-2010
 	
 	F. Herrera (herrera@decsai.ugr.es)
-    L. SÈÄçÔΩ£chez (luciano@uniovi.es)
-    J. AlcalÔøΩÔΩΩFdez (jalcala@decsai.ugr.es)
-    S. GarcËúíÔøΩ(sglopez@ujaen.es)
-    A. FernÈÄçÔΩ£dez (alberto.fernandez@ujaen.es)
+    L. SÁñ£chez (luciano@uniovi.es)
+    J. Alcal?ΩFdez (jalcala@decsai.ugr.es)
+    S. GarcÂÉ?(sglopez@ujaen.es)
+    A. FernÁñ£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
 	This program is free software: you can redistribute it and/or modify
@@ -29,46 +29,45 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, RamË©πÔΩ¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi SolÔøΩÔΩΩ(La Salle, RamË©πÔΩ¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ram˚•¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?Ω(La Salle, Ram˚•¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Dataset.*;
-import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
-
 
 public class Factory {
-  static boolean realKR;
+  boolean realKR;
 
-  public static void initialize() {
+  public void initialize() {
     boolean hasDefaultClass;
     if (Attributes.hasRealAttributes() || Attributes.hasIntegerAttributes()) {
       if (Parameters.adiKR) {
-        Globals_ADI.initialize();
-        hasDefaultClass = Globals_ADI.hasDefaultClass();
+        ParallelGlobals.getGlobals_ADI().init();
+        ParallelGlobals.getGlobals_ADI().initialize();
+        hasDefaultClass = ParallelGlobals.getGlobals_ADI().hasDefaultClass();
       }
       else {
-        Globals_UBR.initialize();
-        hasDefaultClass = Globals_UBR.hasDefaultClass();
+        ParallelGlobals.getGlobals_UBR().initialize();
+        hasDefaultClass = ParallelGlobals.getGlobals_UBR().hasDefaultClass();
       }
       realKR = true;
     }
     else {
       realKR = false;
       Parameters.adiKR = false;
-      Globals_GABIL.initialize();
-      hasDefaultClass = Globals_GABIL.hasDefaultClass();
+      ParallelGlobals.getGlobals_GABIL().initialize();
+      hasDefaultClass = ParallelGlobals.getGlobals_GABIL().hasDefaultClass();
     }
-    Globals_DefaultC.init(hasDefaultClass);
+    ParallelGlobals.getGlobals_DefaultC().init(hasDefaultClass);
   }
 
-  public static Classifier newClassifier() {
+  public Classifier newClassifier() {
     if (realKR) {
       if (Parameters.adiKR) {
         return new ClassifierADI();

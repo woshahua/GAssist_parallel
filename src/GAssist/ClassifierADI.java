@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,14 +29,14 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Dataset.*;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
@@ -58,41 +58,44 @@ public class ClassifierADI
     isEvaluated = false;
   }
 
-  public void initRandomClassifier() {
+  public void initRandomClassifier(int strata) {
+    Rand rn = ParallelGlobals.getRand();
+    
     numRules = Parameters.initialNumberOfRules;
-    int ruleSize = Globals_ADI.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_ADI().ruleSize;
     crm = new int[numRules * ruleSize];
     int base = 0;
     length = 0;
 
-    if (Globals_DefaultC.defaultClassPolicy
-        == Globals_DefaultC.AUTO) {
-      defaultClass = Rand.getInteger(0, Parameters.numClasses - 1);
+    if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy
+        == ParallelGlobals.getGlobals_DefaultC().AUTO) {
+      defaultClass = rn.getInteger(0, Parameters.numClasses - 1);
     }
     else {
-      defaultClass = Globals_DefaultC.defaultClass;
+      defaultClass = ParallelGlobals.getGlobals_DefaultC().defaultClass;
     }
 
     for (int i = 0; i < numRules; i++) {
-      AdaptiveRule.constructor(crm, base, defaultClass);
+      AdaptiveRule.constructor(rn, crm, base, defaultClass, strata);
       length += crm[base];
       base += ruleSize;
     }
     resetPerformance();
   }
-
-  public double computeTheoryLength() {
+  
+  @Override
+  public double computeTheoryLength(PerformanceAgent pa) {
     int base = 0;
-    int ruleSize = Globals_ADI.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_ADI().ruleSize;
     theoryLength = 0;
     for (int i = 0; i < numRules; i++) {
-      if (PerformanceAgent.getActivationsOfRule(i) > 0) {
+      if (pa.getActivationsOfRule(i) > 0) {
         theoryLength
             += AdaptiveRule.computeTheoryLength(crm, base);
       }
       base += ruleSize;
     }
-    if (Globals_DefaultC.enabled) {
+    if (ParallelGlobals.getGlobals_DefaultC().enabled) {
       theoryLength += 0.00000001;
     }
     return theoryLength;
@@ -109,7 +112,7 @@ public class ClassifierADI
   public int doMatch(InstanceWrapper ins) {
     int i;
     int base = 0;
-    int ruleSize = Globals_ADI.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_ADI().ruleSize;
 
     for (i = 0; i < numRules; i++) {
       if (AdaptiveRule.doMatch(crm, base, ins)) {
@@ -118,7 +121,7 @@ public class ClassifierADI
       }
       base += ruleSize;
     }
-    if (Globals_DefaultC.enabled) {
+    if (ParallelGlobals.getGlobals_DefaultC().enabled) {
       positionRuleMatch = numRules;
       return defaultClass;
     }
@@ -145,7 +148,7 @@ public class ClassifierADI
   }
 
   public int getNumRules() {
-    if (Globals_DefaultC.enabled) {
+    if (ParallelGlobals.getGlobals_DefaultC().enabled) {
       return numRules + 1;
     }
     return numRules;
@@ -155,13 +158,15 @@ public class ClassifierADI
     ClassifierADI offspring1 = new ClassifierADI();
     ClassifierADI offspring2 = new ClassifierADI();
     ClassifierADI parent2 = (ClassifierADI) _parent2;
+    
+    Rand rn = ParallelGlobals.getRand();
 
-    int ruleSize = Globals_ADI.ruleSize;
-    int ruleP1 = (int) Rand.getInteger(0, numRules - 1);
-    int ruleP2 = (int) Rand.getInteger(0, parent2.numRules - 1);
+    int ruleSize = ParallelGlobals.getGlobals_ADI().ruleSize;
+    int ruleP1 = (int) rn.getInteger(0, numRules - 1);
+    int ruleP2 = (int) rn.getInteger(0, parent2.numRules - 1);
     offspring1.numRules = ruleP1 + parent2.numRules - ruleP2;
     offspring2.numRules = ruleP2 + numRules - ruleP1;
-    int cutPoint = Rand.getInteger(0, Parameters.numAttributes);
+    int cutPoint = rn.getInteger(0, Parameters.numAttributes);
     offspring1.defaultClass = offspring2.defaultClass = defaultClass;
 
     offspring1.crm = new int[ruleSize * offspring1.numRules];
@@ -204,12 +209,12 @@ public class ClassifierADI
   }
 
   public Classifier copy() {
-    int ruleSize = Globals_ADI.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_ADI().ruleSize;
     ClassifierADI ret = new ClassifierADI();
 
     ret.numRules = numRules;
     ret.theoryLength = theoryLength;
-    ret.exceptionsLength = ret.exceptionsLength;
+    ret.exceptionsLength = exceptionsLength;
     ret.length = length;
     ret.accuracy = accuracy;
     ret.fitness = fitness;
@@ -224,11 +229,13 @@ public class ClassifierADI
   }
 
   public void doMutation() {
-    int whichRule = Rand.getInteger(0, numRules - 1);
-    int ruleSize = Globals_ADI.ruleSize;
+    Rand rn = ParallelGlobals.getRand();
+    
+    int whichRule = rn.getInteger(0, numRules - 1);
+    int ruleSize = ParallelGlobals.getGlobals_ADI().ruleSize;
     int base = whichRule * ruleSize;
 
-    AdaptiveRule.mutation(crm, base, defaultClass);
+    AdaptiveRule.mutation(rn, crm, base, defaultClass);
     isEvaluated = false;
   }
 
@@ -237,7 +244,7 @@ public class ClassifierADI
       return;
     }
 
-    int ruleSize = Globals_ADI.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_ADI().ruleSize;
     int rulesToDelete = whichRules.length;
     if (whichRules[rulesToDelete - 1] == numRules) {
       rulesToDelete--;
@@ -273,14 +280,16 @@ public class ClassifierADI
   }
 
   public void doSpecialStage(int stage) {
+    Rand rn = ParallelGlobals.getRand();
+    
     if (stage == 0) {
-      doSplit();
+      doSplit(rn);
     }
     else if (stage == 1) {
-      doMerge();
+      doMerge(rn);
     }
     else if (stage == 2) {
-      doReinitialize();
+      doReinitialize(rn);
     }
     else {
       LogManager.printErr("Unknown special stage !!");
@@ -288,51 +297,51 @@ public class ClassifierADI
     }
   }
 
-  public void doSplit() {
+  public void doSplit(Rand rn) {
     int base = 0;
     for (int i = 0; i < numRules; i++) {
       length -= crm[base];
-      if (AdaptiveRule.doSplit(crm, base)) {
+      if (AdaptiveRule.doSplit(rn, crm, base)) {
         isEvaluated = false;
       }
       length += crm[base];
-      base += Globals_ADI.ruleSize;
+      base += ParallelGlobals.getGlobals_ADI().ruleSize;
     }
   }
 
-  public void doMerge() {
+  public void doMerge(Rand rn) {
     int base = 0;
     for (int i = 0; i < numRules; i++) {
       length -= crm[base];
-      if (AdaptiveRule.doMerge(crm, base)) {
+      if (AdaptiveRule.doMerge(rn, crm, base)) {
         isEvaluated = false;
       }
       length += crm[base];
-      base += Globals_ADI.ruleSize;
+      base += ParallelGlobals.getGlobals_ADI().ruleSize;
     }
   }
 
-  public void doReinitialize() {
+  public void doReinitialize(Rand rn) {
     int base = 0;
     for (int i = 0; i < numRules; i++) {
       length -= crm[base];
-      if (AdaptiveRule.doReinitialize(crm, base)) {
+      if (AdaptiveRule.doReinitialize(rn, crm, base)) {
         isEvaluated = false;
       }
       length += crm[base];
-      base += Globals_ADI.ruleSize;
+      base += ParallelGlobals.getGlobals_ADI().ruleSize;
     }
   }
 
   public int getNiche() {
-    if (Globals_DefaultC.defaultClassPolicy != Globals_DefaultC.AUTO) {
+    if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy != ParallelGlobals.getGlobals_DefaultC().AUTO) {
       return 0;
     }
     return defaultClass;
   }
 
   public int getNumNiches() {
-    if (Globals_DefaultC.defaultClassPolicy != Globals_DefaultC.AUTO) {
+    if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy != ParallelGlobals.getGlobals_DefaultC().AUTO) {
       return 1;
     }
     return Parameters.numClasses;

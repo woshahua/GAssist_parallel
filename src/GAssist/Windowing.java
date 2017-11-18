@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,15 +29,15 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 import java.util.*;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 
@@ -53,23 +53,44 @@ public class Windowing {
 	
   InstanceWrapper[] is;
   InstanceWrapper[][] strata;
+  InstanceWrapper[] allData;
+  
   int numStrata;
   int currentIteration;
-  int currentRotation;
   boolean lastIteration;
 
-  public Windowing(InstanceWrapper[] _is) {
+  public Windowing(Rand rn, InstanceWrapper[] _is) {
     is = _is;
-    numStrata = Parameters.numStrata;
+    numStrata = Parameters.parallelParts;
     strata = new InstanceWrapper[numStrata][];
     currentIteration = 0;
-    currentRotation = 0;
     lastIteration = false;
 
-    createStrata();
+    createStrata(rn);
+  }
+  
+  private void createStrata(Rand rn) {
+    if (Parameters.windowingMethod.equalsIgnoreCase("dob-scv")) {
+      createStrataDobSCV(rn);
+    }
+    else {
+      createStrataDefault(rn);
+    }
+  }
+  
+  private void createStrataDobSCV(Rand rn) {
+    Vector[] tempStrata = WindowingDobSCV.createStrata(is, numStrata, rn);
+    
+    for (int i = 0; i < numStrata; i++) {
+      int num = tempStrata[i].size();
+      strata[i] = new InstanceWrapper[num];
+      for (int j = 0; j < num; j++) {
+        strata[i][j] = (InstanceWrapper) tempStrata[i].elementAt(j);
+      }
+    }
   }
 
-  private void createStrata() {
+  private void createStrataDefault(Rand rn) {
     Vector[] tempStrata = new Vector[numStrata];
     Vector[] instancesOfClass = new Vector[Parameters.numClasses];
 
@@ -90,14 +111,14 @@ public class Windowing {
       int stratum = 0;
       int count = instancesOfClass[i].size();
       while (count >= numStrata) {
-        int pos = Rand.getInteger(0, count - 1);
+        int pos = rn.getInteger(0, count - 1);
         tempStrata[stratum].addElement(instancesOfClass[i].elementAt(pos));
         instancesOfClass[i].removeElementAt(pos);
         stratum = (stratum + 1) % numStrata;
         count--;
       }
       while (count > 0) {
-        stratum = Rand.getInteger(0, numStrata - 1);
+        stratum = rn.getInteger(0, numStrata - 1);
         tempStrata[stratum].addElement(instancesOfClass[i].elementAt(0));
         instancesOfClass[i].removeElementAt(0);
         count--;
@@ -112,36 +133,11 @@ public class Windowing {
       }
     }
   }
-
-  public boolean newIteration() {
-    currentIteration++;
-    if (currentIteration == Parameters.numIterations) {
-      lastIteration = true;
-    }
-    
-    int previousRotation = currentRotation;
-    
-    if ( Parameters.windowRotationInterval > 1) {
-      currentRotation = (int) Math.floor((double) currentIteration / (double) Parameters.windowRotationInterval);
-    }
-    else if ( Parameters.windowRotationInterval == 1) {
-      currentRotation = currentIteration;
-    }
-    
-    if (numStrata > 1 && previousRotation != currentRotation) {
-      return true;
-    }
-    return false;
+  
+  public InstanceWrapper[] getInstances(int strataToUse) {
+	  return strata[strataToUse];
   }
-
-  public InstanceWrapper[] getInstances() {
-    if (lastIteration) {
-      return is;
-    }
-    
-    return strata[currentRotation % numStrata];
-  }
-
+ 
   public int numVersions() {
     if (lastIteration) {
       return 1;
@@ -156,5 +152,18 @@ public class Windowing {
     return currentIteration % numStrata;
   }
 
+  private static <T> T[] concatAll(T[] first, T[]... rest) {
+	  int totalLength = first.length;
+	  for (T[] array : rest) {
+	    totalLength += array.length;
+	  }
+	  T[] result = Arrays.copyOf(first, totalLength);
+	  int offset = first.length;
+	  for (T[] array : rest) {
+	    System.arraycopy(array, 0, result, offset, array.length);
+	    offset += array.length;
+	  }
+	  return result;
+	}
 }
 

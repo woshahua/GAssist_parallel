@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,8 +29,8 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
@@ -42,11 +42,10 @@
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 
 import java.util.*;
 import java.io.*;
-import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 
 public class ParserParameters {
 /**
@@ -57,7 +56,7 @@ public class ParserParameters {
 	
 	
   static BufferedReader br;
-  static String algorithmName = "GAssist";
+  static String algorithmName = "GAssist-Parallel";
 
   /**
    * Creates a new instance of ParserParameters
@@ -75,107 +74,103 @@ public class ParserParameters {
     parseParameters();
   }
 
-  /**
-   *  Parses the header of the ARFF file
-   */
   static void parseParameters() {
-    String str = getLine();
-    while (str != null) {
-      StringTokenizer st = new StringTokenizer(str, "=");
-      String name = st.nextToken();
-      name = name.trim();
-      name.replaceAll(" ", "");
+	    String str = getLine();
+	    while (str != null) {
+	      StringTokenizer st = new StringTokenizer(str, "=");
+	      String name = st.nextToken();
+	      name = name.trim();
+	      name.replaceAll(" ", "");
 
-      if (name.equalsIgnoreCase("algorithm")) {
-        processAlgorithmName(st);
-      }
-      else if (name.equalsIgnoreCase("inputData")) {
-        processInputs(st);
-      }
-      else if (name.equalsIgnoreCase("outputData")) {
-        processOutputs(st);
-      }
-      else {
-        processParameters(st, name);
-      }
+	      if (name.equalsIgnoreCase("algorithm")) {
+	        processAlgorithmName(st);
+	      }
+	      else if (name.equalsIgnoreCase("inputData")) {
+	        processInputs(st);
+	      }
+	      else if (name.equalsIgnoreCase("outputData")) {
+	        processOutputs(st);
+	      }
+	      else {
+	        processParameters(st, name);
+	      }
 
-      str = getLine();
-    }
-  }
+	      str = getLine();
+	    }
+	  }
 
-  static void processAlgorithmName(StringTokenizer st) {
-    if (!st.hasMoreTokens()) {
-      System.err.println("Parse error processing algorithm name");
-      System.exit(1);
-    }
-    String name = st.nextToken();
-    name = name.trim();
-    if (!algorithmName.equalsIgnoreCase(name)) {
-      System.err.println("This config file is not for us");
-      System.exit(1);
-    }
-  }
+	  static void processAlgorithmName(StringTokenizer st) {
+	    if (!st.hasMoreTokens()) {
+	      System.err.println("Parse error processing algorithm name");
+	      System.exit(1);
+	    }
+	    String name = st.nextToken();
+	    name = name.trim();
+	    if (!algorithmName.equalsIgnoreCase(name)) {
+	      System.err.println("This config file is not for us");
+	      System.exit(1);
+	    }
+	  }
 
-  static void processInputs(StringTokenizer st) {
-    if (!st.hasMoreTokens()) {
-      System.err.println("Parse error processing inputs");
-      System.exit(1);
-    }
-    String files = st.nextToken();
-    files = files.trim();
-    if (! (files.startsWith("\"") && files.endsWith("\""))) {
-      System.err.println("Parse error processing inputs " + files);
-      System.exit(1);
-    }
-    files.replaceAll("^\"", "");
-    files.replaceAll("\"$", "");
-    StringTokenizer st2 = new StringTokenizer(files, "\"");
-    try {
-      String file1 = st2.nextToken();
-      String sep = st2.nextToken();
-      String file2 = st2.nextToken();
-      sep = st2.nextToken();
-      String file3 = st2.nextToken();
-      insertStringParameter("trainInputFile", file1);
-      insertStringParameter("train2InputFile", file2);
-      insertStringParameter("testInputFile", file3);
-    }
-    catch (NoSuchElementException e) {
-      System.err.println("Parse error processing inputs " + files);
-      System.exit(1);
-    }
-  }
+	  static void processInputs(StringTokenizer st) {
+	    if (!st.hasMoreTokens()) {
+	      System.err.println("Parse error processing inputs");
+	      System.exit(1);
+	    }
+	    String files = st.nextToken();
+	    files = files.trim();
+	    if (! (files.startsWith("\"") && files.endsWith("\""))) {
+	      System.err.println("Parse error processing inputs " + files);
+	      System.exit(1);
+	    }
+	    files.replaceAll("^\"", "");
+	    files.replaceAll("\"$", "");
+	    StringTokenizer st2 = new StringTokenizer(files, "\"");
+	    try {
+	      String file1 = st2.nextToken();
+	      String sep = st2.nextToken();
+	      String file2 = st2.nextToken();
+	      sep = st2.nextToken();
+	      String file3 = st2.nextToken();
+	      insertStringParameter("trainInputFile", file1);
+	      insertStringParameter("train2InputFile", file2);
+	      insertStringParameter("testInputFile", file3);
+	    }
+	    catch (NoSuchElementException e) {
+	      System.err.println("Parse error processing inputs " + files);
+	      System.exit(1);
+	    }
+	  }
 
-  static void processOutputs(StringTokenizer st) {
-    if (!st.hasMoreTokens()) {
-      System.err.println("Parse error processing outputs");
-      System.exit(1);
-    }
-    String files = st.nextToken();
-    files = files.trim();
-    if (! (files.startsWith("\"") && files.endsWith("\""))) {
-      System.err.println("Parse error processing outputs " + files);
-      System.exit(1);
-    }
-    files.replaceAll("^\"", "");
-    files.replaceAll("\"$", "");
-    StringTokenizer st2 = new StringTokenizer(files, "\"");
-    try {
-      String file1 = st2.nextToken();
-      String sep = st2.nextToken();
-      String file2 = st2.nextToken();
-      sep = st2.nextToken();
-      String file3 = st2.nextToken();
-      insertStringParameter("trainOutputFile", file1);
-      insertStringParameter("testOutputFile", file2);
-      insertStringParameter("logOutputFile", file3);
-    }
-    catch (NoSuchElementException e) {
-      System.err.println("Parse error processing outputs " + files);
-      System.exit(1);
-    }
-  }
-
+	  static void processOutputs(StringTokenizer st) {
+	    if (!st.hasMoreTokens()) {
+	      System.err.println("Parse error processing outputs");
+	      System.exit(1);
+	    }
+	    String files = st.nextToken();
+	    files = files.trim();
+	    if (! (files.startsWith("\"") && files.endsWith("\""))) {
+	      System.err.println("Parse error processing outputs " + files);
+	      System.exit(1);
+	    }
+	    files.replaceAll("^\"", "");
+	    files.replaceAll("\"$", "");
+	    StringTokenizer st2 = new StringTokenizer(files, "\"");
+	    try {
+	      String file1 = st2.nextToken();
+	      String sep = st2.nextToken();
+	      String file2 = st2.nextToken();
+	      sep = st2.nextToken();
+	      String file3 = st2.nextToken();
+	      insertStringParameter("trainOutputFile", file1);
+	      insertStringParameter("testOutputFile", file2);
+	      insertStringParameter("logOutputFile", file3);
+	    }
+	    catch (NoSuchElementException e) {
+	      System.err.println("Parse error processing outputs " + files);
+	      System.exit(1);
+	    }
+	  }
   static void processParameters(StringTokenizer st, String paramName) {
     if (!st.hasMoreTokens()) {
       System.err.println("Parse error processing parameter " + paramName);
@@ -215,7 +210,6 @@ public class ParserParameters {
     if (paramName.equalsIgnoreCase("probOne")) {
       return true;
     }
-
     if (paramName.equalsIgnoreCase("probSplit")) {
       return true;
     }
@@ -265,16 +259,29 @@ public class ParserParameters {
     if (paramName.equalsIgnoreCase("tournamentSize")) {
       return true;
     }
-    if (paramName.equalsIgnoreCase("numStrata")) {
-      return true;
-    }
     if (paramName.equalsIgnoreCase("maxIntervals")) {
       return true;
     }
     if (paramName.equalsIgnoreCase("iterationMDL")) {
       return true;
     }
-    if (paramName.equalsIgnoreCase("windowRotationInterval")) {
+    // Parallel implementation parameters
+    if (paramName.equalsIgnoreCase("parallelParts")) {
+        return true;
+    }
+    if (paramName.equalsIgnoreCase("fixedSubPopSize")) {
+      return true;
+    }
+    if (paramName.equalsIgnoreCase("migrationInterval")) {
+        return true;
+    }
+    if (paramName.equalsIgnoreCase("rotationInterval")) {
+      return true;
+    }
+    if (paramName.equalsIgnoreCase("saveStatisticsEveryXGeneration")) {
+      return true;
+    }
+    if (paramName.equalsIgnoreCase("individualsToMigrate")) {
       return true;
     }
     
@@ -286,6 +293,12 @@ public class ParserParameters {
       return true;
     }
     if (paramName.equalsIgnoreCase("useMDL")) {
+      return true;
+    }
+    if (paramName.equalsIgnoreCase("evaluateAfterMigration")) {
+      return true;
+    }
+    if (paramName.equalsIgnoreCase("initializeRulesLocally")) {
       return true;
     }
     return false;
@@ -322,8 +335,12 @@ public class ParserParameters {
     if (paramName.equalsIgnoreCase("discretizer10")) {
       return true;
     }
-    if(paramName.equalsIgnoreCase("defaultClass")) return true;
-    if(paramName.equalsIgnoreCase("initMethod")) return true;
+    if (paramName.equalsIgnoreCase("eliteStrategy")) {
+      return true;
+    }
+    if (paramName.equalsIgnoreCase("defaultClass")) return true;
+    if (paramName.equalsIgnoreCase("windowingMethod")) return true;
+    if (paramName.equalsIgnoreCase("initMethod")) return true;
     return false;
   }
 
@@ -343,9 +360,9 @@ public class ParserParameters {
   static void insertIntegerParameter(String paramName, String paramValue) {
     int num = Integer.parseInt(paramValue);
     try {
-      Parameters param = new Parameters();
-      java.lang.reflect.Field f = Parameters.class.getField(paramName);
-      f.setInt(param, num);
+        Parameters param = new Parameters();
+        java.lang.reflect.Field f = Parameters.class.getField(paramName);
+        f.setInt(param, num);
     }
     catch (Exception e) {
       System.err.println("Cannot set param " + paramName);
@@ -355,14 +372,20 @@ public class ParserParameters {
 
   static void insertBooleanParameter(String paramName, String paramValue) {
     boolean val = false;
-    if (paramValue.equalsIgnoreCase("true")) {
+    
+    if (paramValue.equalsIgnoreCase("true")
+      || paramValue.equalsIgnoreCase("1")
+      || paramValue.equalsIgnoreCase("yes")
+      || paramValue.equalsIgnoreCase("T")
+    )
+    {
       val = true;
     }
 
     try {
-      Parameters param = new Parameters();
-      java.lang.reflect.Field f = Parameters.class.getField(paramName);
-      f.setBoolean(param, val);
+        Parameters param = new Parameters();
+        java.lang.reflect.Field f = Parameters.class.getField(paramName);
+        f.setBoolean(param, val);        
     }
     catch (Exception e) {
       System.err.println("Cannot set param " + paramName);
@@ -372,9 +395,9 @@ public class ParserParameters {
 
   static void insertStringParameter(String paramName, String paramValue) {
     try {
-      Parameters param = new Parameters();
-      java.lang.reflect.Field f = Parameters.class.getField(paramName);
-      f.set(param, new String(paramValue));
+        Parameters param = new Parameters();
+        java.lang.reflect.Field f = Parameters.class.getField(paramName);
+        f.set(param, new String(paramValue));        
     }
     catch (Exception e) {
       System.err.println("Cannot set param " + paramName);

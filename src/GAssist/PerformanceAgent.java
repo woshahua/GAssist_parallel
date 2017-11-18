@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,18 +29,17 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
-
 
 public class PerformanceAgent {
 /**
@@ -51,27 +50,31 @@ public class PerformanceAgent {
  */
 	
 
-  public static int[] utilRules;
-  public static int[] okClass;
-  public static int[] totalClass;
-  public static int[][] confusionMatrix;
+  public int[] utilRules;
+  public int[] okClass;
+  public int[] totalClass;
+  public int[][] confusionMatrix;
 
-  static int numAliveRules;
+  int numAliveRules;
 
-  static double totalInstances;
-  static double okInstances;
+  double totalInstances;
+  double okInstances;
 
   /**
    * This function computes the rules of an individual that will be
    * deleted by the rule deletion operator, based on their activity
    * during the previous fitness computation cycle
    */
-  public static int[] controlBloatRuleDeletion() {
+  public int[] controlBloatRuleDeletion() {
+    int threadNo = ParallelGlobals.getThreadNo();
+    
     int nRules = utilRules.length;
-    int minRules = Parameters.ruleDeletionMinRules;
+    int minRules = Parameters.ruleDeletionMinRulesPerThread[threadNo];
     int[] rulesToDelete = new int[nRules];
     int countDeleted = 0;
 
+    Rand rn = ParallelGlobals.getRand();
+    
     if (nRules > minRules) {
       for (int i = 0; i < nRules; i++) {
         if (utilRules[i] == 0) {
@@ -82,7 +85,7 @@ public class PerformanceAgent {
       if (nRules - countDeleted < minRules) {
         int rulesToKeep = minRules - (nRules - countDeleted);
         for (int i = 0; i < rulesToKeep; i++) {
-          int pos = Rand.getInteger(0, countDeleted - 1);
+          int pos = rn.getInteger(0, countDeleted - 1);
           for (int j = pos + 1; j < countDeleted; j++) {
             rulesToDelete[j - 1] = rulesToDelete[j];
           }
@@ -98,7 +101,7 @@ public class PerformanceAgent {
     return arrayRules;
   }
 
-  public static void resetPerformance(int _numRules) {
+  public void resetPerformance(int _numRules) {
     utilRules = new int[_numRules];
 
     for (int i = 0; i < _numRules; i++) {
@@ -114,7 +117,7 @@ public class PerformanceAgent {
    * The test stage computes more statistics. The data structures that
    * hold these statistics are initialized here
    */
-  public static void resetPerformanceTest(int _numRules) {
+  public void resetPerformanceTest(int _numRules) {
     utilRules = new int[_numRules];
     okClass = new int[Parameters.numClasses];
     totalClass = new int[Parameters.numClasses];
@@ -140,7 +143,7 @@ public class PerformanceAgent {
    * Function used to inform PerformanceAgent of each example
    * classified during the training stage
    */
-  public static void addPrediction(int predicted, int real, int activatedRule) {
+  public void addPrediction(int predicted, int real, int activatedRule) {
     totalInstances++;
     if (predicted != -1) {
       if (utilRules[activatedRule] == 0
@@ -158,7 +161,7 @@ public class PerformanceAgent {
    * Function used to inform PerformanceAgent of each example
    * classified during the test stage
    */
-  public static void addPredictionTest(int predicted, int real,
+  public void addPredictionTest(int predicted, int real,
                                        int activatedRule) {
     totalInstances++;
     totalClass[real]++;
@@ -177,22 +180,22 @@ public class PerformanceAgent {
     }
   }
 
-  public static double getAccuracy() {
+  public double getAccuracy() {
     return okInstances / totalInstances;
   }
 
-  public static int getNumAliveRules() {
+  public int getNumAliveRules() {
     return numAliveRules;
   }
 
-  public static int getActivationsOfRule(int rule) {
+  public int getActivationsOfRule(int rule) {
     return utilRules[rule];
   }
 
   /**
    * This function returns the fitness formula used
    */
-  public static double getFitness(Classifier ind) {
+  public double getFitness(Classifier ind, PerformanceAgent pa) {
     double fitness;
     double penalty = 1;
 
@@ -205,7 +208,7 @@ public class PerformanceAgent {
     }
 
     if (Parameters.useMDL) {
-      fitness = Globals_MDL.mdlFitness(ind) / penalty;
+      fitness = ParallelGlobals.getGlobals_MDL().mdlFitness(ind, pa) / penalty;
     }
     else {
       fitness = getAccuracy();
@@ -219,7 +222,7 @@ public class PerformanceAgent {
   /**
    * This function dumps the test statistics
    */
-  public static void dumpStats(String typeOfTest) {
+  public void dumpStats(String typeOfTest) {
     LogManager.println(typeOfTest + " accuracy " + okInstances + "/" +
                        totalInstances + "=" + getAccuracy());
     for (int i = 0; i < Parameters.numClasses; i++) {

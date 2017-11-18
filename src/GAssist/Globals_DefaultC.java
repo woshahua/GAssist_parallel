@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,15 +29,15 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Dataset.*;
 
@@ -47,20 +47,28 @@ import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
 
 public class Globals_DefaultC {
   static int defaultClassPolicy;
-  static int defaultClass;
   static boolean enabled;
-  static int numClasses;
+  int defaultClass;
+  int numClasses;
 
-  static boolean nichingEnabled;
-  static int numNiches;
-  static ArrayList[] accDefaultRules;
+  boolean nichingEnabled;
+  int numNiches;
+  
+  ArrayList[] accDefaultRules;
 
-  public final static int DISABLED = 1;
-  public final static int MINOR = 2;
-  public final static int MAJOR = 3;
-  public final static int AUTO = 4;
+  public final int DISABLED = 1;
+  public final int MINOR = 2;
+  public final int MAJOR = 3;
+  public final int AUTO = 4;
 
-  public static void init(boolean hasDefaultClass) {
+  public Globals_DefaultC() {
+    accDefaultRules = new ArrayList[numNiches];
+    for (int i = 0; i < numNiches; i++) {
+      accDefaultRules[i] = new ArrayList();
+    }
+  }
+  
+  public void init(boolean hasDefaultClass) {
     nichingEnabled = false;
 
     if (!hasDefaultClass) {
@@ -100,10 +108,6 @@ public class Globals_DefaultC {
 
       nichingEnabled = true;
       numNiches = Parameters.numClasses;
-      accDefaultRules = new ArrayList[numNiches];
-      for (int i = 0; i < numNiches; i++) {
-        accDefaultRules[i] = new ArrayList();
-      }
     }
     else {
       System.err.println("Unknown default class option "
@@ -112,7 +116,7 @@ public class Globals_DefaultC {
     }
   }
 
-  static void checkNichingStatus(int iteration, Classifier[] population) {
+  void checkNichingStatus(int iteration, Classifier[] population) {
     if (nichingEnabled) {
       int i;
       int[] counters = new int[numNiches];

@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,19 +29,17 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Dataset.*;
-import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
-
 
 public class Globals_ADI {
 /**
@@ -50,49 +48,62 @@ public class Globals_ADI {
  * </p>
  */
 	
+  public static boolean lock = false;
   public static int ruleSize;
   public static int[] size;
   public static int[] offset;
   public static int[] types;
-  public static ProbabilityManagement probReinit;
+  public ProbabilityManagement probReinit;
 
-  public static void initialize() {
-    ruleSize = 0;
-    size = new int[Parameters.numAttributes];
-    types = new int[Parameters.numAttributes];
-    offset = new int[Parameters.numAttributes];
-
-    for (int i = 0; i < Parameters.numAttributes; i++) {
-      Attribute at = Attributes.getAttribute(i);
-      offset[i] = ruleSize;
-      if (at.getType() == Attribute.NOMINAL) {
-        types[i] = Attribute.NOMINAL;
-        size[i] = at.getNumNominalValues() + 2;
-      }
-      else {
-        types[i] = Attribute.REAL;
-        size[i] = Parameters.maxIntervals * 2 + 2;
-      }
-      ruleSize += size[i];
+  public static void init() {
+    boolean lockTaken = false;
+    if (!lock) {
+      lock = true;
+      lockTaken = true;
     }
-    ruleSize++;
-    ruleSize++;
+    
+    if (lockTaken) {
+      ruleSize = 0;
+      size = new int[Parameters.numAttributes];
+      types = new int[Parameters.numAttributes];
+      offset = new int[Parameters.numAttributes];
+  
+      for (int i = 0; i < Parameters.numAttributes; i++) {
+        Attribute at = Attributes.getAttribute(i);
+        offset[i] = ruleSize;
+        if (at.getType() == Attribute.NOMINAL) {
+          types[i] = Attribute.NOMINAL;
+          size[i] = at.getNumNominalValues() + 2;
+        }
+        else {
+          types[i] = Attribute.REAL;
+          size[i] = Parameters.maxIntervals * 2 + 2;
+        }
+        ruleSize += size[i];
+      }
+      ruleSize++;
+      ruleSize++;
+    }
+  }
 
+  public void initialize() {
     probReinit = new ProbabilityManagement(
         Parameters.probReinitializeBegin,
         Parameters.probReinitializeEnd,
         ProbabilityManagement.LINEAR);
   }
 
-  public static void nextIteration() {
+  public void nextIteration() {
     if (!Parameters.adiKR) {
       return;
     }
+    
+    int threadNo = ParallelGlobals.getThreadNo();
 
-    Parameters.probReinitialize = probReinit.incStep();
+    Parameters.probReinitializePerThread[threadNo] = probReinit.incStep();
   }
 
-  public static boolean hasDefaultClass() {
+  public boolean hasDefaultClass() {
     return true;
   }
 }

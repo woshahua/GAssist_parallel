@@ -7,8 +7,8 @@
 	
 	F. Herrera (herrera@decsai.ugr.es)
     L. Sç–£chez (luciano@uniovi.es)
-    J. Alcalï¿½Fdez (jalcala@decsai.ugr.es)
-    S. Garcåƒ˜ (sglopez@ujaen.es)
+    J. Alcal?½Fdez (jalcala@decsai.ugr.es)
+    S. Garcåƒ?(sglopez@ujaen.es)
     A. Fernç–£dez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
@@ -29,15 +29,15 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ramî‰¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Solï¿½(La Salle, Ramî‰¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, Ramû¥¢ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?½(La Salle, Ramû¥¢ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
  */
 
 
-package GAssist;
+package GAssist_Parallel;
 
 import keel.Dataset.*;
 import keel.Algorithms.Genetic_Rule_Learning.Globals.*;
@@ -58,29 +58,31 @@ public class ClassifierGABIL
     isEvaluated = false;
   }
 
-  public void initRandomClassifier() {
+  public void initRandomClassifier(int strata) {
+    Rand rn = ParallelGlobals.getRand();
+    
     numRules = Parameters.initialNumberOfRules;
-    int ruleSize = Globals_GABIL.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
     double prob = Parameters.probOne;
     int nC = Parameters.numClasses;
     crm = new int[numRules * ruleSize];
     int base = 0;
 
-    if (Globals_DefaultC.defaultClassPolicy == Globals_DefaultC.AUTO) {
-      defaultClass = Rand.getInteger(0, Parameters.numClasses - 1);
+    if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy == ParallelGlobals.getGlobals_DefaultC().AUTO) {
+      defaultClass = rn.getInteger(0, Parameters.numClasses - 1);
     }
     else {
-      defaultClass = Globals_DefaultC.defaultClass;
+      defaultClass = ParallelGlobals.getGlobals_DefaultC().defaultClass;
     }
 
     for (int i = 0; i < numRules; i++) {
       InstanceWrapper ins = null;
       if (PopulationWrapper.smartInit) {
-        if (Globals_DefaultC.defaultClassPolicy != Globals_DefaultC.DISABLED) {
-          ins = PopulationWrapper.getInstanceInit(defaultClass);
+        if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy != ParallelGlobals.getGlobals_DefaultC().DISABLED) {
+          ins = PopulationWrapper.getInstanceInit(defaultClass, strata);
         }
         else {
-          ins = PopulationWrapper.getInstanceInit(Parameters.numClasses);
+          ins = PopulationWrapper.getInstanceInit(Parameters.numClasses, strata);
         }
       }
 
@@ -93,9 +95,9 @@ public class ClassifierGABIL
         else {
           value = -1;
         }
-        for (int k = 0; k < Globals_GABIL.size[j]; k++) {
+        for (int k = 0; k < ParallelGlobals.getGlobals_GABIL().size[j]; k++) {
           if (k != value) {
-            if (Rand.getReal() < prob) {
+            if (rn.getReal() < prob) {
               crm[base2 + k] = 1;
             }
             else {
@@ -106,7 +108,7 @@ public class ClassifierGABIL
             crm[base2 + k] = 1;
           }
         }
-        base2 += Globals_GABIL.size[j];
+        base2 += ParallelGlobals.getGlobals_GABIL().size[j];
       }
 
       if (ins != null) {
@@ -114,9 +116,9 @@ public class ClassifierGABIL
       }
       else {
         do {
-          crm[base2] = Rand.getInteger(0, nC - 1);
+          crm[base2] = rn.getInteger(0, nC - 1);
         }
-        while (Globals_DefaultC.enabled &&
+        while (ParallelGlobals.getGlobals_DefaultC().enabled &&
                crm[base2] == defaultClass);
       }
 
@@ -126,29 +128,29 @@ public class ClassifierGABIL
     resetPerformance();
   }
 
-  public double computeTheoryLength() {
+  public double computeTheoryLength(PerformanceAgent pa) {
     int base = 0;
-    int ruleSize = Globals_GABIL.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
     theoryLength = 0;
     for (int i = 0; i < numRules; i++) {
-      if (PerformanceAgent.getActivationsOfRule(i) > 0) {
+      if (pa.getActivationsOfRule(i) > 0) {
         int base2 = base;
         for (int j = 0; j < Parameters.numAttributes; j++) {
           double countFalses = 0;
-          int numValues = Globals_GABIL.size[j];
+          int numValues = ParallelGlobals.getGlobals_GABIL().size[j];
           for (int k = 0; k < numValues; k++) {
             if (crm[base2 + k] == 0) {
               countFalses++;
             }
           }
           theoryLength += numValues + countFalses;
-          base2 += Globals_GABIL.size[j];
+          base2 += ParallelGlobals.getGlobals_GABIL().size[j];
         }
       }
       base += ruleSize;
     }
 
-    if (Globals_DefaultC.enabled) {
+    if (ParallelGlobals.getGlobals_DefaultC().enabled) {
       theoryLength += 0.00000001;
     }
     return theoryLength;
@@ -163,7 +165,7 @@ public class ClassifierGABIL
     boolean okMatch;
     int i, j;
     int base = 0;
-    int ruleSize = Globals_GABIL.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
 
     int[] val = ins.getNominalValues();
 
@@ -171,7 +173,7 @@ public class ClassifierGABIL
       okMatch = true;
 
       for (j = 0; okMatch && j < nA; j++) {
-        if (crm[base + Globals_GABIL.offset[j] + val[j]] == 0) {
+        if (crm[base + ParallelGlobals.getGlobals_GABIL().offset[j] + val[j]] == 0) {
           okMatch = false;
         }
       }
@@ -182,7 +184,7 @@ public class ClassifierGABIL
       }
       base += ruleSize;
     }
-    if (Globals_DefaultC.enabled) {
+    if (ParallelGlobals.getGlobals_DefaultC().enabled) {
       positionRuleMatch = numRules;
       return defaultClass;
     }
@@ -191,7 +193,7 @@ public class ClassifierGABIL
 
   public void printClassifier() {
     int nA = Parameters.numAttributes;
-    int ruleSize = Globals_GABIL.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
     String str;
     int base = 0;
 
@@ -202,8 +204,8 @@ public class ClassifierGABIL
         String temp = "Att " + att.getName() + " is ";
         boolean irr = true;
         boolean first = true;
-        for (int k = 0; k < Globals_GABIL.size[j]; k++) {
-          if (crm[base + Globals_GABIL.offset[j] + k] == 1) {
+        for (int k = 0; k < ParallelGlobals.getGlobals_GABIL().size[j]; k++) {
+          if (crm[base + ParallelGlobals.getGlobals_GABIL().offset[j] + k] == 1) {
             if (first) {
               temp += att.getNominalValue(k);
               first = false;
@@ -227,7 +229,7 @@ public class ClassifierGABIL
       LogManager.println(str);
       base += ruleSize;
     }
-    if (Globals_DefaultC.enabled) {
+    if (ParallelGlobals.getGlobals_DefaultC().enabled) {
       LogManager.println(numRules + ":Default rule -> "
                          +
                          Attributes.getAttribute(Parameters.numAttributes).
@@ -236,23 +238,25 @@ public class ClassifierGABIL
   }
 
   public int getNumRules() {
-    if (Globals_DefaultC.enabled) {
+    if (ParallelGlobals.getGlobals_DefaultC().enabled) {
       return numRules + 1;
     }
     return numRules;
   }
 
-  public Classifier[] crossoverClassifiers(Classifier _parent2) {
+  public Classifier[] crossoverClassifiers( Classifier _parent2) {
+    Rand rn = ParallelGlobals.getRand();
+    
     ClassifierGABIL offspring1 = new ClassifierGABIL();
     ClassifierGABIL offspring2 = new ClassifierGABIL();
     ClassifierGABIL parent2 = (ClassifierGABIL) _parent2;
 
-    int ruleSize = Globals_GABIL.ruleSize;
-    int ruleP1 = (int) Rand.getInteger(0, numRules - 1);
-    int ruleP2 = (int) Rand.getInteger(0, parent2.numRules - 1);
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
+    int ruleP1 = (int) rn.getInteger(0, numRules - 1);
+    int ruleP2 = (int) rn.getInteger(0, parent2.numRules - 1);
     offspring1.numRules = ruleP1 + parent2.numRules - ruleP2;
     offspring2.numRules = ruleP2 + numRules - ruleP1;
-    int cutPoint = (int) Rand.getInteger(0, Globals_GABIL.ruleSize);
+    int cutPoint = (int) rn.getInteger(0, ParallelGlobals.getGlobals_GABIL().ruleSize);
     offspring1.defaultClass = offspring2.defaultClass = defaultClass;
 
     offspring1.crm = new int[ruleSize * offspring1.numRules];
@@ -286,7 +290,7 @@ public class ClassifierGABIL
   }
 
   public Classifier copy() {
-    int ruleSize = Globals_GABIL.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
     ClassifierGABIL ret = new ClassifierGABIL();
 
     ret.numRules = numRules;
@@ -304,17 +308,19 @@ public class ClassifierGABIL
   }
 
   public void doMutation() {
-    int whichRule = (int) Rand.getInteger(0, numRules - 1);
-    int ruleSize = Globals_GABIL.ruleSize;
+    Rand rn = ParallelGlobals.getRand();
+    
+    int whichRule = (int) rn.getInteger(0, numRules - 1);
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
     int base = whichRule * ruleSize;
     int gene;
 
-    if (Globals_DefaultC.numClasses > 1
-        && Rand.getReal() < 0.1) {
+    if (ParallelGlobals.getGlobals_DefaultC().numClasses > 1
+        && rn.getReal() < 0.1) {
       gene = ruleSize - 1;
     }
     else {
-      gene = (int) Rand.getInteger(0, ruleSize - 2);
+      gene = (int) rn.getInteger(0, ruleSize - 2);
     }
 
     if (gene < ruleSize - 1) {
@@ -329,10 +335,10 @@ public class ClassifierGABIL
       int oldValue = crm[base + gene];
       int newValue;
       do {
-        newValue = (int) Rand.getInteger(0, Parameters.numClasses - 1);
+        newValue = (int) rn.getInteger(0, Parameters.numClasses - 1);
       }
       while (newValue == oldValue ||
-             (Globals_DefaultC.enabled && newValue == defaultClass));
+             (ParallelGlobals.getGlobals_DefaultC().enabled && newValue == defaultClass));
       crm[base + gene] = newValue;
     }
 
@@ -344,7 +350,7 @@ public class ClassifierGABIL
       return;
     }
 
-    int ruleSize = Globals_GABIL.ruleSize;
+    int ruleSize = ParallelGlobals.getGlobals_GABIL().ruleSize;
     int rulesToDelete = whichRules.length;
     if (whichRules[rulesToDelete - 1] == numRules) {
       rulesToDelete--;
@@ -386,14 +392,14 @@ public class ClassifierGABIL
   public void doSpecialStage(int stage) {}
 
   public int getNiche() {
-    if (Globals_DefaultC.defaultClassPolicy != Globals_DefaultC.AUTO) {
+    if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy != ParallelGlobals.getGlobals_DefaultC().AUTO) {
       return 0;
     }
     return defaultClass;
   }
 
   public int getNumNiches() {
-    if (Globals_DefaultC.defaultClassPolicy != Globals_DefaultC.AUTO) {
+    if (ParallelGlobals.getGlobals_DefaultC().defaultClassPolicy != ParallelGlobals.getGlobals_DefaultC().AUTO) {
       return 1;
     }
     return Parameters.numClasses;
