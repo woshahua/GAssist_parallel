@@ -28,7 +28,8 @@ public class Parallel {
    */
   public void run() {
     Thread[] threads = new Thread[Parameters.parallelParts];
-	  
+
+        
     int subPopulationSize;
     if (Parameters.fixedSubPopSize > 0) {
       subPopulationSize = Parameters.fixedSubPopSize;      
@@ -42,11 +43,9 @@ public class Parallel {
   
     PopulationWrapper.initInstancesEvaluation();
     
-
     
 	  for (int i=0; i < Parameters.parallelParts; i++) {
 		  ga[i] = new GA(i);
-		  
       ga[i].setStrataToUse(i);
       ga[i].initGA();
 	  }
@@ -103,6 +102,36 @@ public class Parallel {
     }
     
     Classifier globallyBest = getGlobalBestClassifier(ga);
+    
+    Classifier[] finalClassifier = new Classifier[200];
+    getGlobalBestMultiVer(ga, finalClassifier);
+    
+    
+   
+    double [] fitness1 = new double[Parameters.popSize];
+    double [] fitness2 = new double[Parameters.popSize];
+    double [] fitness3 = new double[Parameters.popSize];
+    double [] testAcc = new double[Parameters.popSize];
+    
+    for(int k = 0; k < Parameters.popSize; k++) {
+      fitness1[k] = 100 - 100*finalClassifier[k].getAccuracy();
+      fitness2[k] = finalClassifier[k].getNumAliveRules();
+      fitness3[k] = finalClassifier[k].getTheoryLength();
+    }
+    // use NSGAII to rank classifier
+    NSGAII nt = new NSGAII(Parameters.popSize);
+    nt.rank(fitness1, fitness2, fitness3);
+    
+    for(int i = 0; i < finalClassifier.length; i++) {
+      if (nt.population_rank[i] == 0) {
+      System.out.println("No." + i + "\n");
+      System.out.println("ACC:" + finalClassifier[i].getAccuracy());
+      System.out.println("Rule" + finalClassifier[i].getNumAliveRules());
+      PopulationWrapper.testClassifierMul(finalClassifier[i], i, testAcc, new PerformanceAgent() , "test",Parameters.testInputFile,Parameters.testOutputFile);
+      System.out.println("TestAcc:" + testAcc[i] + "\n");
+      }
+    }
+
 		GA.outputStatistics(globallyBest, new PerformanceAgent() );
   }
   
@@ -153,6 +182,24 @@ public class Parallel {
     
     return bestInv;
   }
+  private void getGlobalBestMultiVer(GA[] ga, Classifier[] _finalPop) {
+    int num = 0;
+
+    for (int i=0; i < Parameters.parallelParts; i++) {
+      for (int j = 0; j < Parameters.subPopulationSize; j++) {
+        try {
+        _finalPop[num] = ga[i].population[j].copy();
+        num += 1;
+        System.out.println("No." + num + " is ok!");
+        }
+        catch (Exception e) {
+          // TODO: handle exception
+          System.out.println("No." + num + " is wrong!");
+        } 
+      }
+    }
+  }
+
 	
 	public static void printException(Exception e) {
 	      System.err.println("1");

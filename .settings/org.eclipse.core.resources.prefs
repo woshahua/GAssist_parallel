@@ -1,4 +1,6 @@
 eclipse.preferences.version=1
+encoding//src/GAssist_Parallel/GA.java=UTF-8
+encoding//src/GAssist_Parallel/PopulationWrapper.java=UTF-8
 encoding//src/keel/Algorithms/Discretizers/Basic/Discretizer.java=UTF-8
 encoding//src/keel/Algorithms/Discretizers/Basic/ParserParameters.java=UTF-8
 encoding//src/keel/Algorithms/Discretizers/ChiMerge_Discretizer/ChiMergeDiscretizer.java=UTF-8

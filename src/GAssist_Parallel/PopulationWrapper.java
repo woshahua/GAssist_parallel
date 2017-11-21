@@ -6,10 +6,10 @@
 	Copyright (C) 2004-2010
 	
 	F. Herrera (herrera@decsai.ugr.es)
-    L. SÁñ£chez (luciano@uniovi.es)
-    J. Alcal?ΩFdez (jalcala@decsai.ugr.es)
-    S. GarcÂÉ?(sglopez@ujaen.es)
-    A. FernÁñ£dez (alberto.fernandez@ujaen.es)
+    L. SÈê§Óñ©hez (luciano@uniovi.es)
+    J. Alcal?Á¥Ωdez (jalcala@decsai.ugr.es)
+    S. GarcÈçç?(sglopez@ujaen.es)
+    A. FernÈê§Óñ™ez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
 	This program is free software: you can redistribute it and/or modify
@@ -29,8 +29,8 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ram˚•¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Sol?Ω(La Salle, Ram˚•¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, RamÓçíÔøΩ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?ÔøΩ(La Salle, RamÓçíÔøΩ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
@@ -260,6 +260,7 @@ public class PopulationWrapper {
     doEvaluation(_population, pa, strataToUse, true);
   }
    
+  // the function for evaluating all classifiers over all data
   public static void doGlobalEvaluation(Classifier[] _population, PerformanceAgent pa) {
     int predicted, real;
     int popSize = _population.length;
@@ -405,6 +406,56 @@ public class PopulationWrapper {
       _population[i].setIsEvaluated(false);
     }
   }
+  
+  // TODO: Modification for MoGAssist
+  public static void testClassifierMul(Classifier ind, int num, double[] testAcc, PerformanceAgent pa, String typeOfTest,
+                                    String testInputFile, String testOutputFile) {
+    InstanceSet testSet = new InstanceSet();
+    try {
+            testSet.readSet(testInputFile,false);
+    } catch(Exception e) {
+            LogManager.printErr(e.toString());
+            System.exit(1);
+    }
+    replaceMissing(testSet);
+    FileManagement fm = new FileManagement();
+    InstanceWrapper []instances=createWrapperInstances(testSet);
+    double numInstances=instances.length;
+    int real, predicted;
+    pa.resetPerformanceTest(ind.getNumRules());
+    ind.resetPerformance();
+    //Attribute att = Attributes.getAttribute(Parameters.numAttributes);
+    Attribute att = Attributes.getOutputAttribute(0);
+
+    try {
+            fm.initWrite(testOutputFile);
+            fm.writeLine(testSet.getHeader());
+
+            for(int i=0;i<numInstances;i++) {
+                    real=instances[i].classOfInstance();
+                    predicted=ind.doMatch(instances[i]);
+                    String pred;
+                    if(predicted==-1) {
+                            pred="unclassified";
+                    } else {
+                            pred=att.getNominalValue(predicted);
+                    }
+                    fm.writeLine(att.getNominalValue(real)+" "+pred+"\n");
+                    pa.addPredictionTest(predicted,real
+                            ,ind.getPositionRuleMatch());
+            }
+            fm.closeWrite();
+    } catch(Exception e) {
+            System.err.println("Error handling output test file "+testOutputFile);
+            System.exit(1);
+    }
+
+//    LogManager.println("\nStatistics on "+typeOfTest+" file");
+    pa.dumpStats(typeOfTest);
+    testAcc[num] = pa.getAccuracy();
+//    LogManager.println("");
+  }
+ 
 
   public static void testClassifier(Classifier ind, PerformanceAgent pa, String typeOfTest,
                                     String testInputFile, String testOutputFile) {
@@ -452,6 +503,10 @@ public class PopulationWrapper {
     pa.dumpStats(typeOfTest);
     LogManager.println("");
   }
+  
+  
+
+  
 
   static void checkDataset() {
     Attribute[] outputs = Attributes.getOutputAttributes();

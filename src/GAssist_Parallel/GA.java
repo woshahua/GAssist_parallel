@@ -6,10 +6,10 @@
 	Copyright (C) 2004-2010
 	
 	F. Herrera (herrera@decsai.ugr.es)
-    L. SÁñ£chez (luciano@uniovi.es)
-    J. Alcal?ΩFdez (jalcala@decsai.ugr.es)
-    S. GarcÂÉ?(sglopez@ujaen.es)
-    A. FernÁñ£dez (alberto.fernandez@ujaen.es)
+    L. SÈê§Óñ©hez (luciano@uniovi.es)
+    J. Alcal?Á¥Ωdez (jalcala@decsai.ugr.es)
+    S. GarcÈçç?(sglopez@ujaen.es)
+    A. FernÈê§Óñ™ez (alberto.fernandez@ujaen.es)
     J. Luengo (julianlm@decsai.ugr.es)
 
 	This program is free software: you can redistribute it and/or modify
@@ -29,8 +29,8 @@
 
 /**
  * <p>
- * @author Written by Jaume Bacardit (La Salle, Ram˚•¢ Llull University - Barcelona) 28/03/2004
- * @author Modified by Xavi Sol?Ω(La Salle, Ram˚•¢ Llull University - Barcelona) 23/12/2008
+ * @author Written by Jaume Bacardit (La Salle, RamÓçíÔøΩ Llull University - Barcelona) 28/03/2004
+ * @author Modified by Xavi Sol?ÔøΩ(La Salle, RamÓçíÔøΩ Llull University - Barcelona) 23/12/2008
  * @version 1.1
  * @since JDK1.2
  * </p>
@@ -39,6 +39,7 @@
 
 package GAssist_Parallel;
 
+import java.lang.reflect.Parameter;
 import java.util.*;
 
 
@@ -85,7 +86,7 @@ public class GA implements Runnable {
     neighbourIsDone[0] = false;
     neighbourIsDone[1] = false;
     
-    //Init population
+    //TODO: Initialization of population happend here
     population = new Classifier[Parameters.subPopulationSize];
     
     if (Parameters.elitist == Parameters.ONE_PER_SET) {
@@ -302,6 +303,11 @@ public class GA implements Runnable {
     initializeThread();
 
     initPopulation(population); 
+    
+    //TODO: add for MoGAssist
+    Classifier[] offsprings;
+    Classifier[] midsprings = new Classifier[Parameters.subPopulationSize];
+    
     PopulationWrapper.doEvaluation(population, pa, strataToUse, true);
  
     int numIterations, interval = 0;
@@ -364,6 +370,7 @@ public class GA implements Runnable {
       
       for (int i = 0; i < numIterations; i++) {
         
+        // numIterations = 100 ? 
         boolean lastIteration = (iteration >= Parameters.numIterations - 1);
         
         if (iteration % 100 == 0) {
@@ -382,22 +389,61 @@ public class GA implements Runnable {
         boolean res = ti.runTimers(rn, iteration, population, st);
         
         PopulationWrapper.setModified(population);
+        
+        // TODO: add for MoGAssist
+        // make a copy of population
+        for(int k = 0; k < Parameters.subPopulationSize; k++) {
+          midsprings[k] = population[k].copy();
+        }
+        // evaluate population using NSGAII
 
+        double [] fitness1 = new double[Parameters.subPopulationSize];
+        double [] fitness2 = new double[Parameters.subPopulationSize];
+        double [] fitness3 = new double[Parameters.subPopulationSize];
+
+        for(int k = 0; k < Parameters.subPopulationSize; k++) {
+          fitness1[k] = 100 - 100*population[k].getAccuracy();
+          fitness2[k] = population[k].getNumAliveRules();
+          fitness3[k] = population[k].getTheoryLength();
+        }
+        // use NSGAII to rank classifier
+        NSGAII nt = new NSGAII(Parameters.subPopulationSize);
+        nt.rank(fitness1, fitness2, fitness3);
+
+        // for debug confirm
+        /*
+        if ( iteration == Parameters.numIterations - 2) {
+          for (int j = 0; j < Parameters.subPopulationSize; j++) {
+            if (nt.population_rank[j] == 0) {
+              System.out.println("Number:" + j + "\n");
+              System.out.println("----------------NSGAII:\n");
+              System.out.println("acc:" + population[j].getAccuracy() + "\n");
+              System.out.println("rule:" + population[j].getNumAliveRules() + "\n");
+            }
+          }
+        }
+        */
+        
         // GA cycle
-        population = doTournamentSelection();
+        // TODO: original version
+        // population = doTournamentSelection();
+        // TODO: Here is the MoGAssist version
+        population = doTournamentSelection(population, iteration, nt);
+        // no need change
         offsprings = doCrossover();
         doMutation(offsprings);
-        
+
         PopulationWrapper.doEvaluation(offsprings, pa, strataToUse, true);
 
+        // TODO: How to keep best individual
         if (Parameters.keepBestIndividual) {
             checkBestIndividual();
         }
         
-        population = replacementPolicy(offsprings, pa, lastIteration);
+        // TODO: MoGAssist modification
+        population = replacementPolicy(offsprings, midsprings, pa, lastIteration);
 
         if (Parameters.parallelParts == 1) {
-          
           if (iteration % 100 == 0) {
             System.out.println("Generation " + iteration + " ...");
           }
@@ -408,12 +454,12 @@ public class GA implements Runnable {
           if ( gen == 1 || gen % Parameters.saveStatisticsEveryXGeneration == 0) {
             doGlobalEvaluation();
             st.computeGlobalStatistics(population, bestIndiv);
-          
             globallyEvaluated = true;
           }
         }
         
         if (lastIteration && !globallyEvaluated) {
+          // TODO: what is this ? 
           doGlobalEvaluation();
         }
 
@@ -423,6 +469,7 @@ public class GA implements Runnable {
         iteration++;
       }
       
+      // migration after 100 iterations
       if (Parameters.parallelParts > 1 && !lastRun) {
 
         if (Parameters.migrateBestIndividual) {
@@ -491,15 +538,24 @@ public class GA implements Runnable {
       }
     }
     
+    // final output result of each thread : for what ?
     System.out.println("Thread " + threadNo + ": Finished.");
+    
+        
   }
   
+  // output best classifier over all sub-pop and all data
+  // global control and output start in Parallel.java
   public static void outputStatistics(Classifier best, PerformanceAgent pa) {
     LogManager.println("\nPhenotype: ");
     best.printClassifier();
     PopulationWrapper.testClassifier(best, pa, "training",Parameters.train2InputFile,Parameters.trainOutputFile);
     PopulationWrapper.testClassifier(best, pa, "test",Parameters.testInputFile,Parameters.testOutputFile);
-        
+  }
+  
+  // TODO: Modification MoGAssist return population
+  Classifier[] returnPop() {
+    return population;
   }
 
   Classifier[] doCrossover() {
@@ -619,7 +675,7 @@ public class GA implements Runnable {
   /**
    *  Does Tournament Selection without replacement.
    */
-  public Classifier[] doTournamentSelection() {
+  public Classifier[] doTournamentSelection(Classifier[] _population, int iteration, NSGAII nt) {
 
     Classifier[] selectedPopulation;
     selectedPopulation = new Classifier[Parameters.subPopulationSize];
@@ -650,8 +706,17 @@ public class GA implements Runnable {
       for (j = 1; j < Parameters.tournamentSize; j++) {
         candidate = selectCandidateWOR(pools[niche]
                                        , niche, population);
-        if (population[candidate].compareToIndividual(population[winner])) {
+        // TODO: MoGAssist start here
+        if(nt.population_rank[candidate]<nt.population_rank[winner]){
           winner = candidate;
+        }
+        else if(nt.population_rank[candidate]==nt.population_rank[winner]&&nt.crowding_dist[candidate]>nt.crowding_dist[winner]){
+          winner = candidate;
+        }
+        else if(nt.population_rank[candidate]==nt.population_rank[winner]&&nt.crowding_dist[candidate]==nt.crowding_dist[winner]){          
+          if(_population[candidate].getAccuracy() > _population[winner].getAccuracy() ){
+            winner = candidate;
+          }
         } 
       }
       selectedPopulation[i] = population[winner].copy();
@@ -683,13 +748,23 @@ public class GA implements Runnable {
     set.add(cl);
   }
 
-  public Classifier[] replacementPolicy(Classifier[] offspring, PerformanceAgent pa
+  public Classifier[] replacementPolicy(Classifier[] offspring, Classifier[] midsprings, PerformanceAgent pa
                                         , boolean lastIteration) {
     int i;
     
+    // TODO: modification for MoGAssist
+    Classifier[] tempsprings = new Classifier[Parameters.subPopulationSize];
+    // sort offspring based on accuracy 
+    double [] fitness1=new double [Parameters.subPopulationSize*2];
+    double [] fitness2=new double [Parameters.subPopulationSize*2];
+    double [] fitness3 = new double [Parameters.subPopulationSize*2];
+         
+    
+    // if this is the last iteration
     if (lastIteration) {
       for (i = 0; i < numVersions; i++) {
         if (bestIndiv[i] != null) {
+          //TODO here need a modification
           PopulationWrapper.evaluateClassifier(bestIndiv[i], pa, strataToUse, true);
         }
       }
@@ -707,6 +782,8 @@ public class GA implements Runnable {
         offspring[i] = (Classifier) set.get(i);
       }
     }
+    
+    // normal state operation
     else {
       boolean previousVerUsed = false;
       
@@ -725,6 +802,7 @@ public class GA implements Runnable {
           currVer--;
         }
   
+        // currVer: replace worst with best classifier
         if (bestIndiv[currVer] != null) {
           PopulationWrapper.evaluateClassifier(bestIndiv[currVer], pa, strataToUse, true);
           int worst = PopulationWrapper.getWorst(offspring);
@@ -738,6 +816,8 @@ public class GA implements Runnable {
           else {
             prevVer = currVer - 1;
           }
+          
+          // Prever: replace worst with best classifier
           if (bestIndiv[prevVer] != null) {
             PopulationWrapper.evaluateClassifier(bestIndiv[prevVer], pa, strataToUse, true);
             int worst = PopulationWrapper.getWorst(offspring);
@@ -745,7 +825,95 @@ public class GA implements Runnable {
           }
         }
       }
+      
+      // -------------------------------------
+      // TODO: here start the MOGAssist modification
+      for(i=0;i<Parameters.subPopulationSize*2;i++){
+        if(i<Parameters.subPopulationSize){
+          fitness1[i]=100-100*midsprings[i].getAccuracy();
+          fitness2[i]=midsprings[i].getNumAliveRules();
+          fitness3[i] = midsprings[i].getTheoryLength();
+        }
+        else {
+      // TODO: here comes the MoGAssist version replacement
+          fitness1[i]=100-100*offspring[i-Parameters.subPopulationSize].getAccuracy();
+          fitness2[i]=offspring[i-Parameters.subPopulationSize].getNumAliveRules();
+          fitness3[i] = offspring[i-Parameters.subPopulationSize].getTheoryLength();
+        }
+      }
+      NSGAII nr=new NSGAII(Parameters.subPopulationSize*2);  
+      nr.rank(fitness1, fitness2, fitness3);
+      
+      int rank=0;
+      i=0;
+      while(i<Parameters.subPopulationSize){
+        int size=nr.population_fronts.get(rank).size();
+        if((i+size)>Parameters.subPopulationSize){
+          if(size==2){
+            int a1=nr.population_fronts.get(rank).get(0);
+            if(a1>=Parameters.subPopulationSize){
+              tempsprings[i]=offspring[a1-Parameters.subPopulationSize].copy();
+              i++;
+            }
+            else{
+              tempsprings[i]=midsprings[a1].copy();
+              i++;
+            }
+          }
+          else{
+            for(int j=0;j<size-1;j++){
+              for(int k=j+1;k<size;k++){
+                int a1=nr.population_fronts.get(rank).get(j);
+                int a2=nr.population_fronts.get(rank).get(k);
+                if(nr.crowding_dist[a1]<nr.crowding_dist[a2]){
+                  nr.population_fronts.get(rank).set(k,a1);
+                  nr.population_fronts.get(rank).set(j,a2);
+                }
+              }
+            }
+            for(int l=0;l<size;l++){
+//              LogManager.println(i+"-------");
+              int a1=nr.population_fronts.get(rank).get(l);
+              if(a1>=Parameters.subPopulationSize){
+                tempsprings[i]=offspring[a1-Parameters.subPopulationSize].copy();
+                i++;
+              }
+              else{
+                tempsprings[i]=midsprings[a1].copy();
+                i++;
+              }
+              if(i==Parameters.subPopulationSize){
+                break;
+              }
+            }
+          }
+        }
+        else{
+          for(int j=0;j<Parameters.subPopulationSize*2;j++){
+             if(nr.population_rank[j]==rank){
+               if(j<Parameters.subPopulationSize){
+               tempsprings[i]=midsprings[j].copy();
+               i++;
+             }
+             else{
+               tempsprings[i]=offspring[j-Parameters.subPopulationSize].copy();
+               i++;
+             }
+             }
+            if(i==Parameters.subPopulationSize){
+              break;
+            }
+          }
+        }
+        rank++;
+      }
+      
+      for(i=0;i<Parameters.subPopulationSize;i++){
+        offspring[i]=tempsprings[i].copy();
+      }
     }
+    // here MoGAssist modification end
+    //----------------------------------
     
     return offspring;
   }
