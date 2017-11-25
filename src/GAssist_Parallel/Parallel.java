@@ -122,13 +122,16 @@ public class Parallel {
     NSGAII nt = new NSGAII(Parameters.popSize);
     nt.rank(fitness1, fitness2, fitness3);
     
+    LogManager.println("===========final classifiers============");
     for(int i = 0; i < finalClassifier.length; i++) {
       if (nt.population_rank[i] == 0) {
-      System.out.println("No." + i + "\n");
-      System.out.println("ACC:" + finalClassifier[i].getAccuracy());
-      System.out.println("Rule" + finalClassifier[i].getNumAliveRules());
+//      LogManager.println("No." + i + "\n");
+      
+      LogManager.print( finalClassifier[i].getNumAliveRules()+ " " + finalClassifier[i].getAccuracy());
       PopulationWrapper.testClassifierMul(finalClassifier[i], i, testAcc, new PerformanceAgent() , "test",Parameters.testInputFile,Parameters.testOutputFile);
-      System.out.println("TestAcc:" + testAcc[i] + "\n");
+      LogManager.println(" " + testAcc[i] + "\n");
+//      LogManager.println("Rule" + finalClassifier[i].getNumAliveRules());
+//      LogManager.println("TestAcc:" + testAcc[i] + "\n");
       }
     }
 

@@ -451,7 +451,7 @@ public class PopulationWrapper {
     }
 
 //    LogManager.println("\nStatistics on "+typeOfTest+" file");
-    pa.dumpStats(typeOfTest);
+//    pa.dumpStats(typeOfTest);
     testAcc[num] = pa.getAccuracy();
 //    LogManager.println("");
   }
